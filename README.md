@@ -4,7 +4,7 @@
 初开发于2024年10月1日，历经四个月的公测与缝缝补补，第一代release横空出世。  
 代码稀烂，但注释较齐。  
 涉及QQ消息发送的部分遵循[OneBot-v11](https://github.com/botuniverse/onebot-11)协议。  
-空间发送部分引用了项目[Qzone-Next](https://github.com/Web-Art-Online/qzone-next)
+空间发送部分引用了项目[Qzone-Next](https://github.com/Web-Art-Online/qzone-next)。
 背景图采用随机Bingimg。
 
 ---
