@@ -1,5 +1,5 @@
 <?php
-function curl($url,$data=null,$ua=null) {
+function curl($url,$data=null,$ua=null,$getcode=null) {
   $ch = curl_init();
   $cu[CURLOPT_URL] = $url;
   $cu[CURLOPT_HEADER] = false;
@@ -16,6 +16,10 @@ function curl($url,$data=null,$ua=null) {
   $cu[CURLOPT_TIMEOUT] = "5";
   curl_setopt_array($ch, $cu);
   $content = curl_exec($ch);
+  $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+  if ($getcode) {
+    return $httpCode;
+  }
   curl_close($ch);
   return $content;
 }

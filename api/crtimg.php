@@ -20,7 +20,10 @@
             font-family: SiYuanRegular;
             margin: 0;
             padding: 2% auto;
-            background-image: url('bingimg.php');
+            <?php
+            if(!$_GET['bg']) echo "background-image: url('bingimg.php');";
+            if($_GET['bg']) echo "background:".$_GET['bg'].";";
+            ?>
         }
         
         .container {
@@ -106,6 +109,8 @@
       <div class="author">
     <?php
       $signature = $_GET['signature'];
+      //if($_GET['qquin'] == 3260161918) $signature = "2312吴明易"; 
+      //取消匿名投稿快捷方案
       if($signature != "匿名投稿"): 
         $signature .= "({$_GET['qquin']})";
         $qlogo = "<img style=\"width:10%; border-radius: 35%; vertical-align: middle; float:left;\" src=\"http://q2.qlogo.cn/headimg_dl?dst_uin={$_GET['qquin']}&spec=100\"></img>";
@@ -120,7 +125,7 @@
         <?php
         echo "<p style=\"font-size:".($width/32)."px; opacity:0.6; color:black; margin-top:0px; margin-right:0px; margin-bottom:0px;\">$signature $date</p>";
         echo "<p style='color:black;font-size:".($width/32)."px;margin-top: 0px; margin-bottom:0px;'>ID:{$_GET['rid']}</p>";
-        echo "<center><p style=\"font-size:".($width/38)."px; opacity:0.48; color:black; margin-top:0px; margin-bottom:0px;\">哈喽 歪瑞巴蒂~(＾◇^)/我是雨花台中学全自动万能表白墙，7*24h全天为您服务，最快即刻发出(˵¯͒〰¯͒˵)还在等什么，火速将QQ2060574537推荐给你的同学们吧~</p></center>";
+        //echo "<center><p style=\"font-size:".($width/38)."px; opacity:0.48; color:black; margin-top:0px; margin-bottom:0px;\">哈喽 歪瑞巴蒂~(＾◇^)/我是雨花台中学全自动万能表白墙，7*24h全天为您服务，最快即刻发出(˵¯͒〰¯͒˵)还在等什么，火速将QQ2060574537推荐给你的同学们吧~</p><br /><p style=\"font-size:".($width/32)."px; opacity:0.6; color:#f6ff42; margin-top:0px; margin-bottom:0px;\">表白墙投稿会同步至群376132742内，若有其他年级的学生大群欢迎联系墙墙加入~</p></center>";
         //<br />另：现招收内容审核员兼推广员5位，只需每日抽出5分钟查看群消息即可<span style='font-family:NotoColorEmoji'>🤓👆🏻</span>享受劲爆内容提前看特权噢<span style='font-family:NotoColorEmoji'>👀</span><br />仅需邀请10名好友添加墙墙就可以咯₍˄·͈༝·͈˄*₎◞ ̑̑具体可私聊墙墙发送“反馈+申请审核员”
         ?>
         </div>

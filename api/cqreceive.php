@@ -24,13 +24,14 @@ $date = date("Y-m-d");
 $json = file_get_contents("php://input");
 $msginfo = json_decode($json,true);
 if($msginfo['request_type'] == "friend") {
+  sleep(rand(30,120));
   $remark = explode("回答:",$msginfo['comment'])[1];
   //file_put_contents("tmp",$remark);
   //$data = json_encode(array("approve" => 1,"remark" => $remark));
   require 'func.php';
   $deal = new datactrl();
   $deal -> sqlctrl('setsign',[$msginfo['user_id'],$remark]);
-  curl("http://127.0.0.1:15000/set_friend_add_request?access_token=al233","flag={$msginfo['flag']}&approve=1&remark=$remark");
+  curl("http://172.16.0.2:15000/set_friend_add_request?access_token=al233","flag={$msginfo['flag']}&approve=1&remark=$remark");
   //file_put_contents("tmp_",$rtc);
   //die($data);
 }

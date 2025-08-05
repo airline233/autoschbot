@@ -8,20 +8,20 @@ var_dump($RawMsgArr);
 $qquin = $RawMsgArr['user_id'];
 $qqname = $RawMsgArr['sender']['nickname']; //发送者QQ&昵称
 $msg = $RawMsgArr['raw_message'];
+$confs = json_decode(file_get_contents('config.json'),1);
+foreach ($confs as $n => $v) $GLOBALS[$n] = $v;
 $deal = new datactrl(); //初始化操作类
-$configs = $deal -> sqlctrl('getconfigs');
-var_dump($configs);
-$superadm = ;
-$groupids = ['_1234567800' => 1,'_2234567800' => 1];
+
 if(!file_exists("../tmp")) mkdir("../tmp");
+
 if($RawMsgArr['message_type'] == 'private') {
   $_msg = ".".$msg;
   //$_msg = explode(" ",$msg);
-  if(strpos($_msg,"反馈")) :
-    $deal -> reply("private",$superadm,"收到反馈($qquin)：{$msg_t}");
+  if(strpos($_msg,"反馈") != 0 && strpos($_msg,"反馈") < 5) :
+    foreach($GLOBALS['supergroups'] as $gid => $v) $deal -> reply("group",ltrim($gid,"_"),"收到反馈($qquin)：{$msg}");
     $deal -> reply("private",$qquin,"反馈提交成功！");
     exit;
-  elseif(strpos($_msg,"更改署名") || strpos($_msg,"设置署名")) :
+  elseif(strpos($_msg,"署名")  != 0 && strpos($_msg,"署名") < 5) :
     $msg_t = trim(mb_substr($_msg,5));
     $signature = $msg_t ?? "_dynamic";
     $stats = $deal -> sqlctrl("setsign",[$qquin,$signature]);
@@ -29,11 +29,17 @@ if($RawMsgArr['message_type'] == 'private') {
     $rtx = ($stats == 1) ? "成功设置署名为{$signature}。" : "设置署名失败，请联系管理员！";
     $deal -> reply("private",$qquin,$rtx);
     exit;
-  elseif(strpos($_msg,"撤稿")):
+  elseif(strpos($_msg,"撤稿")  != 0 && strpos($_msg,"撤稿") < 5):
     $msg_t = trim(mb_substr($_msg,3));
     $rts = $deal -> sqlctrl("setcancelled",[$msg_t,$qquin]);
     $deal -> reply("private",$qquin,($rts == 1) ? "成功撤回ID为{$msg_t}的稿件" : "撤稿失败，该稿件已发出/被拒/撤回或输入了错误的稿件ID。");
-    if($rts == 1) foreach($groupids as $grpid => $v) if($v == 1) $deal -> reply("group",str_replace("_","",$grpid),"稿件{$msg_t}已被发稿人撤回。");
+    if($rts == 1) foreach($GLOBALS['supergroups'] as $gid) $deal -> reply("group",$gid,"稿件{$msg_t}已被发稿人撤回。");
+    exit;
+  elseif(strpos($_msg,"删稿") != 0 && strpos($_msg,"删稿") < 5):
+    $msg_t = trim(mb_substr($_msg,3));
+    $rts = $deal -> delqzone($msg_t,$qquin);
+    $deal -> reply("private",$qquin,($rts == 1) ? "成功删除了ID为{$msg_t}的稿件（注意，同步在群内的无法撤回）" : "删稿失败，可能是输入了错误的稿件ID。");
+    if($rts == 1) foreach($GLOBALS['supergroups'] as $gid) $deal -> reply("group",$gid,"稿件{$msg_t}已被发稿人主动删除。");
     exit;
   endif;
   
@@ -41,24 +47,24 @@ if($RawMsgArr['message_type'] == 'private') {
     case "投稿":
       $signature = $deal -> sqlctrl('getsign',$qquin);
       if(!$signature): 
-        $deal -> reply("private",$qquin,"你需要先为你的投稿“设置署名”。（直接发送：设置署名 xxx）");
+        $deal -> reply("private",$qquin,"你需要先为你的投稿“设置署名”。（直接发送：设置署名 xxx）\n⚠️设置署名后需要再次发送“投稿”以开始投稿流程");
         exit;
       endif;
       if($signature == "_dynamic") $signature = $qqname;
-      $deal -> reply("private",$qquin,"你现在可以开始投稿。现在你可以一次性(这不是必须遵守的)将文字和图片全部发出，发出时将会保留文字与图片的搭配顺序。\n请注意，投稿过程中机器人不会有任何回复。无论你何时想放弃投稿，都可以发送“取消投稿”以提前中止投稿流程。（已发送的稿件不支持撤回）\n请记得发送“结束投稿”以结束投稿流程！（只有结束流程投稿才会被发送）");
-      $deal -> reply("private",$qquin,"你现在的署名为：$signature\n如需更改，请发送“更改署名+新的署名”");
       touch("../tmp/$qquin.content"); //Step.1 建立临时文件
+      $deal -> reply("private",$qquin,"你现在的署名为：$signature\n如需更改，请发送“更改署名+新的署名”");
+      $deal -> reply("private",$qquin,"你现在可以开始投稿。❗投稿完毕后请务必记得发送“结束投稿”",0);
       break;
       
     case "匿名投稿":
-      $deal -> reply("private",$qquin,"匿名投稿，启动！\n发送“取消投稿”以取消该次投稿，发送“结束投稿”以完毕该次投稿。");
       touch("../tmp/$qquin.content");
       touch("../tmp/$qquin.anony");
+      $deal -> reply("private",$qquin,"匿名投稿，启动！\n发送“取消投稿”以取消该次投稿，发送“结束投稿”以完毕该次投稿。");
       break;
       
     case "帮助":
-      usleep(rand(100000,9999999));
-      $deal -> reply("private",$qquin,"欢迎使用雨中校园墙Bot。\n投稿请先发送“投稿”，如需匿名请发送“匿名投稿”。\n在稿件被发送前可发送“撤稿+id”撤回投稿，如撤稿 2024100191。\n机器人暂不支持定时发稿、视频投稿，请耐心等待更新。\n如有问题可发送：反馈+问题（用一条消息发出）；");
+      usleep(rand(100000,4999999));
+      $deal -> reply("private",$qquin,"欢迎使用雨中校园墙Bot。\n·投稿请先发送“投稿”，如需匿名请发送“匿名投稿”。\n·开始投稿后直接发送你要投稿的内容\n·投稿结束前可发送“取消投稿”以放弃投稿\n·在稿件被发送前可发送“撤稿 稿件id”撤回投稿\n·发出后删稿请发送“删稿 稿件id”（仅能删除空间内的）\n\n·机器人暂不支持定时发稿、视频投稿，如有需要请联系管理员\n·联系管理员：反馈+问题（用一条消息发出）；\n\n另：面向高一长期招收内容审核员兼推广员，请发送“反馈+申请审核员”");
       break;
       
     case "结束投稿":
@@ -75,13 +81,11 @@ if($RawMsgArr['message_type'] == 'private') {
         break;
         endif;
       $raw = array($qquin,$signature,urlencode($content));
-      //$rid = $deal -> sqlctrl('insert',$raw);
-      $rid = $deal -> submit($raw);
-      $content = "已收到您的投稿，您的稿件id为：{$rid}。\n❗请务必检查投稿预览，若稿件排版有问题可发送“撤稿 {$rid}”撤回稿件重新投稿；\n若投稿内容不违反规则将会在24小时内发出。感谢您对雨中万能墙的支持\nps.发出后撤稿请在“撤稿”前加上发送“反馈”";
+      $rid = $deal -> submit($raw,$_hide);
+      if($_hide) $deal -> sqlctrl("setcancelled",[$rid,$qquin]);
+      $content = "已收到您的投稿，您的稿件id为：{$rid}。\n⚠️发出后一般不支持撤稿\n❗请务必检查投稿预览，若稿件排版有问题请及时发送“撤稿 {$rid}”撤回稿件重新投稿；\n\n对于不违反规则的投稿将会在最短时间内发出";
       if(!is_numeric($rid)) $content = $rid;
-      $deal -> reply("private",$qquin,$content);
-      //$deal -> reply("private",$qquin,"机器人发稿功能正在维护中，预计最迟7日中午12点前恢复正常。您的投稿已入库，维护结束后会统一发出。");
-      //$deal -> sendqzone();
+      $deal -> reply("private",$qquin,$content,0);
       if(is_numeric($rid)) {
         unlink("../tmp/$qquin.content"); @unlink("../tmp/$qquin.anony");
       }
@@ -117,17 +121,17 @@ if($RawMsgArr['message_type'] == 'private') {
         fclose($file);
         exit;
       else:
-        sleep(rand(1,3));
-        //if(rand(1000,9999)<5000) exit;
+        if(strstr($msg,'自动回复')) exit;
         $deal -> reply("private",$qquin,"欢迎投稿🎉发送“帮助”获取使用方法");
       endif;
       break;
     }
-}else if($RawMsgArr['message_type'] == "group" && $groupids["_{$RawMsgArr['group_id']}"] == 1) {
+}else if($RawMsgArr['message_type'] == "group" && in_array($RawMsgArr['group_id'],$GLOBALS['supergroups']) == 1) {
   $cmd = explode(" ",trim($msg,"/"));
   switch($cmd[0]) {
     case 'send':
     case 'crtimg':
+    case 'delqzone';
       $cmd[0] = str_replace("send","sendqzone",$cmd[0]);
       $content = eval('return $deal -> '."{$cmd[0]}({$cmd[1]});");
     break;
@@ -139,18 +143,17 @@ if($RawMsgArr['message_type'] == 'private') {
     break;
     
     case 'sendmsg':
-      if($RawMsgArr['user_id'] != $superadm) exit;
+      if($RawMsgArr['user_id'] != $GLOBALS['superadm']) exit;
       $deal -> reply($cmd[1],$cmd[2],$cmd[3]);
       $content = "done.";
       exit;
     break;
   }
-  if($cmd[0] == "crtimg") $content = "[CQ:image,url=http://127.0.0.1:15001/tmp/{$content}]";
+  if($cmd[0] == "crtimg") $content = "[CQ:image,url={$GLOBALS['absaddr']}/tmp/{$content}]";
   if(isset($content)) :
     $deal -> reply("group",$RawMsgArr['group_id'],$content);
     if($cmd[0] == 'crtimg') exit;
-    $deal -> reply("group",1234567800,$cmd[0].":".$cmd[1].":".$cmd[2]);
-    $deal -> reply("group",2234567800,$cmd[0].":".$cmd[1].":".$cmd[2]);
+    foreach ($GLOBALS['supergroups'] as $gid)$deal -> reply("group",$gid,$cmd[0].":".$cmd[1].":".$cmd[2]);
     var_dump($content);
   endif;
 }

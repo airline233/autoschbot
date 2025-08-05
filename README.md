@@ -4,7 +4,8 @@
 初开发于2024年10月1日，历经四个月的公测与缝缝补补，第一代release横空出世。  
 代码稀烂，但注释较齐。  
 涉及QQ消息发送的部分遵循[OneBot-v11](https://github.com/botuniverse/onebot-11)协议。  
-空间发送部分引用了项目[Qzone-Next](https://github.com/Web-Art-Online/qzone-next)。
+~~空间发送部分引用了项目[Qzone-Next](https://github.com/Web-Art-Online/qzone-next)。~~
+现使用项目[php-qzone](https://github.com/airline233/php-qzone)
 背景图采用随机Bingimg。
 
 ---
@@ -23,39 +24,23 @@
   ```bash
   apt-get install wkhtmltopdf
   ```
-- 需要自行运行符合OneBotv11 Webhook的QQ客户端（如Napcat）。
+- 需要自行运行符合OneBotv11 Webhook的QQ客户端（推荐使用Napcat）。
 
 #### 数据库：
-- 网页端登录`./databases/phpliteadmin.php`  
-  - 数据库：`permanence` -> `configurations`表  
-  - 字段名：`field`、`value`  
-  - 数据：  
-    - `superadmin`：管理员QQ号  
-    - `supergroup`：管理员QQ群  
+- 数据库为自动创建，即开即用
+- 请配置/api/config.json，样例位于/api/config.sample.json
+  - apiaddr：支持OneBot v11标准的webhook地址
+  - token：access_token，与onebot通信用
+  - superadmin：超级管理员QQ（其实基本没用了）
+  - supergroups：管理员群（审核群）
+  - database_path：数据库所在路径
+  - absaddr：项目部署的绝对地址，位于api目录上一级，需要支持http协议（不一定需要公网）
+  - sync_groups：发稿同步的群聊 不推荐太多
 
-- **需要手动更改的php文件**：
-  - `api/func.php`内  
-    - 152~153行：OneBot Webhook相关配置  
-    - 185行：投稿同步发送的QQ群号（年级大群/学校大群）  
-    - 201~202行：管理员群/审核群  
-    - **需批量替换**：`127.0.0.1:15001` -> 本项目运行的地址，若web端口使用15001则无需更改  
-
-  - `api/dealmsg.php`内  
-    - 14行：管理员  
-    - 15行：管理员群与审核群（在此处无区别）  
-    - 152~153行：同15行，`1234567800`为管理员群  
-    - 机器人发送的文案大部分都位于该文件，可手动更改  
-    - **需批量替换**：`127.0.0.1:15001` -> 本项目运行的地址，若web端口使用15001则无需更改  
-
-  - `api/autosend.php`内  
-    - 5行、10行：同`dealmsg.php`  
-
-  - `api/qzone-next/sample.py`内  
-    - 9行：机器人本体QQ号  
 
 ### 3. Cron配置
 ```bash
-0 0 * * * ? * php ./api/autosend.php
+0 0 * * * ? * php /api/autosend.php
 ```
 
 ---
@@ -69,5 +54,5 @@
 
 **GitHub项目地址**：[高度自动化QQ校园墙Bot](https://github.com/airline233/autoschbot)  
 **开发者**：@Airline233
-**版本**：v1.0.0  
-**最后更新**：2025年2月22日  
+**版本**：v1.1.0  
+**最后更新**：2025年8月5日  
