@@ -23,17 +23,15 @@ for($i=5;$i<=10;$i++) {
 $date = date("Y-m-d");
 $json = file_get_contents("php://input");
 $msginfo = json_decode($json,true);
+$confs = json_decode(file_get_contents('config.json'),1);
+foreach ($confs as $n => $v) $GLOBALS[$n] = $v;
 if($msginfo['request_type'] == "friend") {
   sleep(rand(30,120));
   $remark = explode("回答:",$msginfo['comment'])[1];
-  //file_put_contents("tmp",$remark);
-  //$data = json_encode(array("approve" => 1,"remark" => $remark));
   require 'func.php';
   $deal = new datactrl();
   $deal -> sqlctrl('setsign',[$msginfo['user_id'],$remark]);
-  curl("http://172.16.0.2:15000/set_friend_add_request?access_token=al233","flag={$msginfo['flag']}&approve=1&remark=$remark");
-  //file_put_contents("tmp_",$rtc);
-  //die($data);
+  curl("{$GLOBALS['apiaddr']}/set_friend_add_request?access_token={$GLOBALS['access_token']}","flag={$msginfo['flag']}&approve=1&remark=$remark");
 }
 if($msginfo['post_type'] != 'message') exit;
 $time = $tm.str_replace("-",null,$msginfo['message_id']);
@@ -49,5 +47,4 @@ if(!is_dir("cq_log/$date")) mkdir("cq_log/$date");
 if(@file_get_contents("cq_log/$date/$time.log")) exit;
 file_put_contents("cq_log/$date/$time.log",$json);
 
-exec("nohup curl http://127.0.0.1:15001/api/dealmsg.php --data logfile=$date/$time.log > /dev/null &");
-//echo json_encode(array("message" => "hi"));
+//一个及其蹩脚的假消息队列，曾经是用来防止线程阻塞的（go-cqhttp时代用的，我也不知道为什么要这样写，因为懒得动我的屎山代码就保留了下来...)
