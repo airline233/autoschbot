@@ -170,6 +170,7 @@ class datactrl {
         if (!$rid) continue;
         $imgpath = "../tmp/$rid.jpg";
         $content = urldecode($v['content']);
+        $addimgs = [];
         if(strstr($content,'image')) :
             preg_match_all("/\[al_image\](.*?)\[\/al_image\]/s",$content,$addimgs);
             $addimgs = $addimgs[1];
@@ -179,8 +180,9 @@ class datactrl {
         $imgs = $instance -> upload($imgpath,'file')."\t";
         foreach($addimgs as $img) $imgs .= $instance -> upload("../upload/".$img,'file')."\t";
         $tid = $instance -> publish(rtrim($rids,','),1,rtrim($imgs,"\t"));
-        if(is_numeric($tid) || !$tid):
-            $sendrt .= "$rid error！！！";
+        if(strlen($tid) < 24): //现在tid是24位 不确保以后tx会延长所以预留好
+            $sendrt .= "$rid error！！！[CQ:at,qq={$GLOBALS['superadmin']}]\n";
+            continue;
             endif;
         $this->reply("private", $v['qquin'], "您的稿件{$rid}已被发出。",0);
         usleep(500000);
@@ -190,12 +192,10 @@ class datactrl {
             $sendcontent .= "[CQ:image,url={$GLOBALS['absaddr']}/upload/{$img}]";
         foreach($groups as $gid)
             $this->reply("group", $gid, $sendcontent,0);
-        //@unlink("../upload/" . $v['image']);
         $sendrt .= $rid . " ";
         $rids .= $rid.",";
         $sendrt .= "动态发布成功，tid为".$tid.',';
         $this->sqlctrl('setsent', [$v['id'],$tid]);
-      //$sendrt .= shell_exec("python3 qzone-next/sample.py" . $content);
     }
     foreach (explode(" ", $content) as $path)
       @unlink($path);

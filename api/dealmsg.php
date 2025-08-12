@@ -16,9 +16,8 @@ if(!file_exists("../tmp")) mkdir("../tmp");
 
 if($RawMsgArr['message_type'] == 'private') {
   $_msg = ".".$msg;
-  //$_msg = explode(" ",$msg);
   if(strpos($_msg,"反馈") != 0 && strpos($_msg,"反馈") < 5) :
-    foreach($GLOBALS['supergroups'] as $gid => $v) $deal -> reply("group",ltrim($gid,"_"),"收到反馈($qquin)：{$msg}");
+    foreach($GLOBALS['supergroups'] as $gid) $deal -> reply("group",$gid,"收到反馈($qquin)：{$msg}");
     $deal -> reply("private",$qquin,"反馈提交成功！");
     exit;
   elseif(strpos($_msg,"署名")  != 0 && strpos($_msg,"署名") < 5) :

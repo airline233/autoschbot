@@ -26,21 +26,23 @@ $msginfo = json_decode($json,true);
 $confs = json_decode(file_get_contents('config.json'),1);
 foreach ($confs as $n => $v) $GLOBALS[$n] = $v;
 if($msginfo['request_type'] == "friend") {
-  sleep(rand(30,120));
+  sleep(rand(5,60));
   $remark = explode("回答:",$msginfo['comment'])[1];
   require 'func.php';
   $deal = new datactrl();
+  $confs = json_decode(file_get_contents('config.json'),1);
+  foreach ($confs as $n => $v) $GLOBALS[$n] = $v;
   $deal -> sqlctrl('setsign',[$msginfo['user_id'],$remark]);
   curl("{$GLOBALS['apiaddr']}/set_friend_add_request?access_token={$GLOBALS['access_token']}","flag={$msginfo['flag']}&approve=1&remark=$remark");
 }
 if($msginfo['post_type'] != 'message') exit;
-$time = $tm.str_replace("-",null,$msginfo['message_id']);
+$time = $tm.str_replace("-","",$msginfo['message_id']);
 if(strlen($time) != 16) {
   while(strlen($time) < 16) {
     $time = $time."0";
   }
   while(strlen($time) > 16) {
-    $time = str_replace($time[17],null,$time);
+    $time = str_replace($time[17],"",$time);
   }
 }
 if(!is_dir("cq_log/$date")) mkdir("cq_log/$date");
