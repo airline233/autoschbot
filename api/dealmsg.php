@@ -2,7 +2,7 @@
 require "curl.php";
 require "func.php";
 $LogJson = @file_get_contents("cq_log/".$_POST['logfile']);
-if($_GET['debug']) $LogJson = @file_get_contents("cq_log/".date("Y-m-d")."/{$_GET['debug']}.log"); //DEBUG态获取原始消息
+if(isset($_GET['debug'])) $LogJson = @file_get_contents("cq_log/".date("Y-m-d")."/{$_GET['debug']}.log"); //DEBUG态获取原始消息
 $RawMsgArr = json_decode($LogJson,true);
 var_dump($RawMsgArr);
 $qquin = $RawMsgArr['user_id'];
@@ -15,12 +15,11 @@ $deal = new datactrl(); //初始化操作类
 if(!file_exists("../tmp")) mkdir("../tmp");
 
 if($RawMsgArr['message_type'] == 'private') {
-  $_msg = ".".$msg;
-  if(strpos($_msg,"反馈") != 0 && strpos($_msg,"反馈") < 5) :
+  if(strpos($msg,"反馈") === 0) :
     foreach($GLOBALS['supergroups'] as $gid) $deal -> reply("group",$gid,"收到反馈($qquin)：{$msg}");
     $deal -> reply("private",$qquin,"反馈提交成功！");
     exit;
-  elseif(strpos($_msg,"署名")  != 0 && strpos($_msg,"署名") < 5) :
+  elseif(strpos($msg,"署名")  !== false && strpos($_msg,"署名") < 10) :
     $msg_t = trim(mb_substr($_msg,5));
     $signature = $msg_t ?? "_dynamic";
     $stats = $deal -> sqlctrl("setsign",[$qquin,$signature]);
@@ -28,13 +27,13 @@ if($RawMsgArr['message_type'] == 'private') {
     $rtx = ($stats == 1) ? "成功设置署名为{$signature}。" : "设置署名失败，请联系管理员！";
     $deal -> reply("private",$qquin,$rtx);
     exit;
-  elseif(strpos($_msg,"撤稿")  != 0 && strpos($_msg,"撤稿") < 5):
+  elseif(strpos($msg,"撤稿") === 0):
     $msg_t = trim(mb_substr($_msg,3));
     $rts = $deal -> sqlctrl("setcancelled",[$msg_t,$qquin]);
     $deal -> reply("private",$qquin,($rts == 1) ? "成功撤回ID为{$msg_t}的稿件" : "撤稿失败，该稿件已发出/被拒/撤回或输入了错误的稿件ID。");
     if($rts == 1) foreach($GLOBALS['supergroups'] as $gid) $deal -> reply("group",$gid,"稿件{$msg_t}已被发稿人撤回。");
     exit;
-  elseif(strpos($_msg,"删稿") != 0 && strpos($_msg,"删稿") < 5):
+  elseif(strpos($msg,"删稿") === 0):
     $msg_t = trim(mb_substr($_msg,3));
     $rts = $deal -> delqzone($msg_t,$qquin);
     $deal -> reply("private",$qquin,($rts == 1) ? "成功删除了ID为{$msg_t}的稿件（注意，同步在群内的无法撤回）" : "删稿失败，可能是输入了错误的稿件ID。");
@@ -44,15 +43,11 @@ if($RawMsgArr['message_type'] == 'private') {
   
   switch($msg) {
     case "投稿":
-      $signature = $deal -> sqlctrl('getsign',$qquin);
-      if(!$signature): 
-        $deal -> reply("private",$qquin,"你需要先为你的投稿“设置署名”。（直接发送：设置署名 xxx）\n⚠️设置署名后需要再次发送“投稿”以开始投稿流程");
-        exit;
-      endif;
+      $signature = $deal -> sqlctrl('getsign',$qquin) ?? "_dynamic";
       if($signature == "_dynamic") $signature = $qqname;
       touch("../tmp/$qquin.content"); //Step.1 建立临时文件
       $deal -> reply("private",$qquin,"你现在的署名为：$signature\n如需更改，请发送“更改署名+新的署名”");
-      $deal -> reply("private",$qquin,"你现在可以开始投稿。❗投稿完毕后请务必记得发送“结束投稿”",0);
+      $deal -> reply("private",$qquin,"你现在可以开始投稿。\n❗投稿完毕后请务必记得发送“结束投稿”，当然也可以发送“取消投稿”",0);
       break;
       
     case "匿名投稿":
