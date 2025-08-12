@@ -1,0 +1,13 @@
+{
+
+    "apiaddr": "http://172.16.0.2:15000",
+    "access_token": "your_token_here",
+
+    "superadmin": "your_qq_here",
+    "supergroups": ["group1","group2"],
+
+    "database_path": "../databases",
+    "absaddr": "http://172.16.0.1:15001",
+
+    "sync_groups": ["group3", "group4"]
+}
