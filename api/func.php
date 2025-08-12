@@ -151,7 +151,7 @@ class datactrl {
   }
 
   function reply($type, $qquin, $msg, $sleep=1) {
-    $msg = trim($msg);
+    $msg = urlencode(trim($msg));
     if($sleep) sleep(rand(5,15)); 
     if(!$sleep) sleep(3);
     if ($type == 'private') return curl("{$GLOBALS['apiaddr']}/send_private_msg?access_token={$GLOBALS['access_token']}", "message=$msg&user_id=$qquin");
