@@ -14,14 +14,11 @@ if(date("d") == 1 && date("H") == 0 || $_GET['debug'] == 1) {//若为该月第�
         qquin TEXT NOT NULL,
         signature TEXT NOT NULL,
         content TEXT NOT NULL,
-        ifdenied BOOLEAN DEFAULT 0,
-        ifcancelled BOOLEAN DEFAULT 0,
-        ifsent BOOLEAN DEFAULT 0,
+        status NUMERIC NOT NULL DEFAULT 0,
+        setTime TEXT DEFAULT NULL,
         tid TEXT DEFAULT NULL
       );';
-      //$sql1 = 'UPDATE sqlite_sequence SET seq = '.$rid0.' WHERE name = \''.$table.'\';'; ##IT NOT WORKS
-      //var_dump($sql);
-      $sql1 = 'INSERT INTO '.$table.' (`id`, `qquin`, `signature`, `content`, `ifcancelled`) VALUES ('.$rid0.',\'null\',\'null\',\'null\',1);';
+      $sql1 = 'INSERT INTO '.$table.' (`id`, `qquin`, `signature`, `content`, `status`) VALUES ('.$rid0.',\'null\',\'null\',\'null\',1);';
     var_dump($pdo->exec($sql));
     var_dump($pdo -> exec($sql1));
     unset($sql);

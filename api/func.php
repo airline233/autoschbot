@@ -4,7 +4,7 @@ class datactrl {
     /*直接涉及数据库的操作:insert get* set*
       表名：Ym(202410)
       表结构：
-      id timestamp qquin signature content image ifdenied ifcance>
+      id timestamp qquin signature content status[0未发送;1已发送(定时也算已发);5主动撤稿;7拒稿;] time
       其中id,timestamp,if*无需在insert时传入
       type定义：
         insert(array(date,qquin,signature,content,image));
@@ -38,7 +38,7 @@ class datactrl {
       */
         $rid = intval($datain[0]);
         $reason = $datain[1];
-        $stmt = $pdo->prepare("UPDATE $table SET `ifdenied`=1 WHERE `id`=?");
+        $stmt = $pdo->prepare("UPDATE $table SET `status`=7 WHERE `id`=?");
         $stmt->execute([$rid]);
         $stmt = $pdo->prepare("SELECT `qquin` FROM $table WHERE `id`=?");
         $stmt->execute([$rid]);
@@ -54,7 +54,7 @@ class datactrl {
       ** 传入数据：[rid]
       */
         $rid = intval($datain[0]);
-        $stmt = $pdo->prepare("UPDATE $table SET `ifdenied`=0 WHERE `id`=?");
+        $stmt = $pdo->prepare("UPDATE $table SET `status`=0 WHERE `id`=?");
         $stmt->execute([$rid]);
         $stmt = $pdo->prepare("SELECT `qquin` FROM $table WHERE `id`=?");
         $stmt->execute([$rid]);
@@ -89,7 +89,7 @@ class datactrl {
           $stmt = $pdo->prepare("SELECT * FROM $table_name WHERE id=?");
           $stmt->execute([$rid]);
         } else {
-          $stmt = $pdo->prepare("SELECT * FROM $table WHERE ifdenied=0 AND ifcancelled=0 AND ifsent=0");
+          $stmt = $pdo->prepare("SELECT * FROM $table WHERE status=0");
           $stmt->execute();
         }
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -98,13 +98,13 @@ class datactrl {
       case 'setsent': //设置发送态 （done）
         $id = $datain[0];
         $tid = $datain[1];
-        $stmt = $pdo->prepare("UPDATE $table SET `ifsent`=1,`tid`=? WHERE `id`=?");
+        $stmt = $pdo->prepare("UPDATE $table SET `status`=1,`tid`=? WHERE `id`=?");
         $stmt->execute([$tid,$id]);
         return 1;
         break;
 
       case 'setcancelled': //撤稿（done）
-        $stmt = $pdo->prepare("UPDATE $table SET `ifcancelled`=1 WHERE `id`=? AND `qquin`=? AND `ifsent`=0 AND `ifdenied`=0 AND `ifcancelled`=0");
+        $stmt = $pdo->prepare("UPDATE $table SET `status`=5 WHERE `id`=? AND `qquin`=? AND `status`=0");
         $stmt->execute([round($datain[0]), intval($datain[1])]);
         return ($stmt->rowCount() == 1) ? 1 : 0;
         break;
@@ -144,6 +144,19 @@ class datactrl {
         return $stmt->fetchColumn();
         break;
 
+      case 'setTime':
+        /*
+        ** 设置定时发稿
+        ** parans = [rid,qquin,timestamp]
+        ** return = true ?? errorinfo
+        */
+        $rid = $datain[0];
+        $qquin = $datain[1];
+        $setTime = $datain[2];
+        if(!is_numeric($rid) || $setTime - time() > 7*24*60*60 || $setTime < time()) return 'Invaild ID or time';
+        $stmt = $pdo->prepare("UPDATE $table SET `setTime`=? WHERE `id`=? AND `qquin`=? AND `status` = 0");
+        $stmt -> execute([$setTime,$rid, $qquin]);
+        return ($stmt->rowCount() == 1) ? 1 : 0;
       default:
         return "undefined func";
         break;
@@ -158,7 +171,7 @@ class datactrl {
     if ($type == 'group') return curl("{$GLOBALS['apiaddr']}/send_group_msg?access_token={$GLOBALS['access_token']}", "message=$msg&group_id=$qquin");
   }
 
-  function sendqzone($_rid = null) { //发空间 目前是一条稿件对应一条说说，图片单独发出
+  function sendqzone($_rid = null, $time = null) { //发空间 目前是一条稿件对应一条说说，图片单独发出
     require_once('qzone.class.php');
     $instance = new qzone($GLOBALS['apiaddr'],$GLOBALS['access_token']);
     $origin = $this->sqlctrl('getunsentcontents', $_rid);
@@ -170,6 +183,7 @@ class datactrl {
         if (!$rid) continue;
         $imgpath = "../tmp/$rid.jpg";
         $content = urldecode($v['content']);
+        $setTime = $v['setTime'];
         $addimgs = [];
         if(strstr($content,'image')) :
             preg_match_all("/\[al_image\](.*?)\[\/al_image\]/s",$content,$addimgs);
@@ -179,12 +193,15 @@ class datactrl {
             $this->crtimg($v);
         $imgs = $instance -> upload($imgpath,'file')."\t";
         foreach($addimgs as $img) $imgs .= $instance -> upload("../upload/".$img,'file')."\t";
-        $tid = $instance -> publish(rtrim($rids,','),1,rtrim($imgs,"\t"));
-        if(strlen($tid) < 24): //现在tid是24位 不确保以后tx会延长所以预留好
-            $sendrt .= "$rid error！！！[CQ:at,qq={$GLOBALS['superadmin']}]\n";
+        $tid = $instance -> publish(rtrim($rids,','),1,rtrim($imgs,"\t"),$setTime);
+        if(is_array($tid)):
+            $json = json_encode($tid);
+            $sendrt .= "$rid error！！！{$json}[CQ:at,qq={$GLOBALS['superadmin']}]\n";
             continue;
             endif;
-        $this->reply("private", $v['qquin'], "您的稿件{$rid}已被发出。",0);
+        $this->sqlctrl('setsent', [$v['id'],$tid]);
+        $this->reply("private", $v['qquin'], ($setTime) ? "您的稿件{$rid}已登记定时，将在".date($setTime)."发出。\n注意：定时稿件不会在各年级群内同步" : "您的稿件{$rid}已被发出。",0);
+        if(isset($setTime)) continue;
         usleep(500000);
         $groups = $GLOBALS['sync_groups'];
         $sendcontent = "[CQ:image,url={$GLOBALS['absaddr']}/tmp/{$rid}.jpg]";
@@ -195,7 +212,6 @@ class datactrl {
         $sendrt .= $rid . " ";
         $rids .= $rid.",";
         $sendrt .= "动态发布成功，tid为".$tid.',';
-        $this->sqlctrl('setsent', [$v['id'],$tid]);
     }
     foreach (explode(" ", $content) as $path)
       @unlink($path);

@@ -28,16 +28,23 @@ if($RawMsgArr['message_type'] == 'private') {
     $deal -> reply("private",$qquin,$rtx);
     exit;
   elseif(strpos($msg,"撤稿") === 0):
-    $msg_t = trim(mb_substr($_msg,3));
+    $msg_t = trim(mb_substr($msg,3));
     $rts = $deal -> sqlctrl("setcancelled",[$msg_t,$qquin]);
     $deal -> reply("private",$qquin,($rts == 1) ? "成功撤回ID为{$msg_t}的稿件" : "撤稿失败，该稿件已发出/被拒/撤回或输入了错误的稿件ID。");
     if($rts == 1) foreach($GLOBALS['supergroups'] as $gid) $deal -> reply("group",$gid,"稿件{$msg_t}已被发稿人撤回。");
     exit;
   elseif(strpos($msg,"删稿") === 0):
-    $msg_t = trim(mb_substr($_msg,3));
+    $msg_t = trim(mb_substr($msg,3));
     $rts = $deal -> delqzone($msg_t,$qquin);
     $deal -> reply("private",$qquin,($rts == 1) ? "成功删除了ID为{$msg_t}的稿件（注意，同步在群内的无法撤回）" : "删稿失败，可能是输入了错误的稿件ID。");
     if($rts == 1) foreach($GLOBALS['supergroups'] as $gid) $deal -> reply("group",$gid,"稿件{$msg_t}已被发稿人主动删除。");
+    exit;
+  elseif(strpos($msg,"设置定时")===0): //设置定时 tid 时间格式(2025-07-05 23:00:00)
+    $msg_t = explode(" ",$msg);
+    $rid = $msg_t[1];
+    $setTime = trim(strtotime($msg_t[2]." ".$msg_t[3]));
+    $rt = $deal -> sqlctrl('setTime',[$rid,$qquin,$setTime]);
+    $deal -> reply('private',$qquin,($rt==1) ? "设置定时成功，稿件{$rid}将在{$msg_t[2]} {$msg_t[3]}发出" : $rt);
     exit;
   endif;
   
@@ -58,7 +65,7 @@ if($RawMsgArr['message_type'] == 'private') {
       
     case "帮助":
       usleep(rand(100000,4999999));
-      $deal -> reply("private",$qquin,"欢迎使用雨中校园墙Bot。\n·投稿请先发送“投稿”，如需匿名请发送“匿名投稿”。\n·开始投稿后直接发送你要投稿的内容\n·投稿结束前可发送“取消投稿”以放弃投稿\n·在稿件被发送前可发送“撤稿 稿件id”撤回投稿\n·发出后删稿请发送“删稿 稿件id”（仅能删除空间内的）\n\n·机器人暂不支持定时发稿、视频投稿，如有需要请联系管理员\n·联系管理员：反馈+问题（用一条消息发出）；\n\n另：面向高一长期招收内容审核员兼推广员，请发送“反馈+申请审核员”");
+      $deal -> reply("private",$qquin,"欢迎使用雨中校园墙Bot。\n·投稿请先发送“投稿”，如需匿名请发送“匿名投稿”，在投稿结束后可以设置定时发稿\n·开始投稿后直接发送你要投稿的内容\n·投稿结束前可发送“取消投稿”以放弃投稿\n·在稿件被发送前可发送“撤稿 稿件id”撤回投稿\n·发出后删稿请发送“删稿 稿件id”（仅能删除空间内的）\n\n·机器人暂不支持视频投稿，如有需要请联系管理员\n·联系管理员：反馈+问题（用一条消息发出）；\n\n另：面向高一长期招收内容审核员兼推广员，请发送“反馈+申请审核员”");
       break;
       
     case "结束投稿":
@@ -77,7 +84,7 @@ if($RawMsgArr['message_type'] == 'private') {
       $raw = array($qquin,$signature,urlencode($content));
       $rid = $deal -> submit($raw,$_hide);
       if($_hide) $deal -> sqlctrl("setcancelled",[$rid,$qquin]);
-      $content = "已收到您的投稿，您的稿件id为：{$rid}。\n⚠️发出后一般不支持撤稿\n❗请务必检查投稿预览，若稿件排版有问题请及时发送“撤稿 {$rid}”撤回稿件重新投稿；\n\n对于不违反规则的投稿将会在最短时间内发出";
+      $content = "已收到您的投稿，您的稿件id为：{$rid}。\n⚠️发出后一般不支持撤稿\n❗请务必检查投稿预览，若稿件排版有问题请及时发送“撤稿 {$rid}”撤回稿件重新投稿；\n\n如需为您的稿件设置定时，请发送：“设置定时 {$rid} 2025-01-01 00:00:00”（日期和时间仅做示例 不要漏掉空格 最多可支持七日内的定时设置）";
       if(!is_numeric($rid)) $content = $rid;
       $deal -> reply("private",$qquin,$content,0);
       if(is_numeric($rid)) {
