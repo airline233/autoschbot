@@ -145,15 +145,15 @@ class datactrl {
         break;
 
       case 'setTime':
-        /*
-        ** 设置定时发稿
-        ** parans = [rid,qquin,timestamp]
-        ** return = true ?? errorinfo
-        */
+      /*
+      ** 设置定时发稿
+      ** parans = [rid,qquin,timestamp]
+      ** return = true ?? errorinfo
+      */
         $rid = $datain[0];
         $qquin = $datain[1];
         $setTime = $datain[2];
-        if(!is_numeric($rid) || $setTime - time() > 7*24*60*60 || $setTime < time()) return 'Invaild ID or time';
+        if(!is_numeric($rid) || $setTime - time() > 7*24*60*60 || $setTime < strtotime(date("Y-m-d H:").date('i')+1.':00')) return 'Invaild ID or time';
         $stmt = $pdo->prepare("UPDATE $table SET `setTime`=? WHERE `id`=? AND `qquin`=? AND `status` = 0");
         $stmt -> execute([$setTime,$rid, $qquin]);
         return ($stmt->rowCount() == 1) ? 1 : 0;
@@ -193,7 +193,7 @@ class datactrl {
             $this->crtimg($v);
         $imgs = $instance -> upload($imgpath,'file')."\t";
         foreach($addimgs as $img) $imgs .= $instance -> upload("../upload/".$img,'file')."\t";
-        $tid = $instance -> publish(rtrim($rids,','),1,rtrim($imgs,"\t"),$setTime);
+        $tid = $instance -> publish($rid,1,rtrim($imgs,"\t"),$setTime);
         if(is_array($tid)):
             $json = json_encode($tid);
             $sendrt .= "$rid error！！！{$json}[CQ:at,qq={$GLOBALS['superadmin']}]\n";
