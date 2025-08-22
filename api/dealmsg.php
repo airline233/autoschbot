@@ -84,7 +84,7 @@ if($RawMsgArr['message_type'] == 'private') {
       $raw = array($qquin,$signature,urlencode($content));
       $rid = $deal -> submit($raw,$_hide);
       if($_hide) $deal -> sqlctrl("setcancelled",[$rid,$qquin]);
-      $content = "已收到您的投稿，您的稿件id为：{$rid}。\n⚠️发出后一般不支持撤稿\n❗请务必检查投稿预览，若稿件排版有问题请及时发送“撤稿 {$rid}”撤回稿件重新投稿；\n\n如需为您的稿件设置定时，请发送：“设置定时 {$rid} 2025-01-01 00:00:00”（日期和时间仅做示例 不要漏掉空格 最多可支持七日内的定时设置）";
+      $content = "已收到您的投稿，您的稿件id为：{$rid}。\n⚠️发出后一般不支持撤稿\n❗请务必检查投稿预览，若稿件排版有问题请及时发送“撤稿 {$rid}”撤回稿件重新投稿；\n\n如需为您的稿件设置定时，请发送：“设置定时 {$rid} 2025-01-01 00:00:00”（日期和时间仅做示例 不要漏掉空格 最多可支持一小时后~七日内的定时设置）";
       if(!is_numeric($rid)) $content = $rid;
       $deal -> reply("private",$qquin,$content,0);
       if(is_numeric($rid)) {
