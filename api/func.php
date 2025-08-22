@@ -201,6 +201,9 @@ class datactrl {
             endif;
         $this->sqlctrl('setsent', [$v['id'],$tid]);
         $this->reply("private", $v['qquin'], ($setTime) ? "您的稿件{$rid}已登记定时，将在".date("Y-m-d H:i:s",$setTime)."发出。\n注意：定时稿件不会在各年级群内同步" : "您的稿件{$rid}已被发出。",0);
+        $sendrt .= $rid . " ";
+        $rids .= $rid.",";
+        $sendrt .= "动态发布成功，tid为".$tid.',';
         if(isset($setTime)) continue;
         usleep(500000);
         $groups = $GLOBALS['sync_groups'];
@@ -209,9 +212,6 @@ class datactrl {
             $sendcontent .= "[CQ:image,url={$GLOBALS['absaddr']}/upload/{$img}]";
         foreach($groups as $gid)
             $this->reply("group", $gid, $sendcontent,0);
-        $sendrt .= $rid . " ";
-        $rids .= $rid.",";
-        $sendrt .= "动态发布成功，tid为".$tid.',';
     }
     foreach (explode(" ", $content) as $path)
       @unlink($path);
