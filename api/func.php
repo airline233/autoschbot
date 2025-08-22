@@ -200,7 +200,7 @@ class datactrl {
             continue;
             endif;
         $this->sqlctrl('setsent', [$v['id'],$tid]);
-        $this->reply("private", $v['qquin'], ($setTime) ? "您的稿件{$rid}已登记定时，将在".date($setTime)."发出。\n注意：定时稿件不会在各年级群内同步" : "您的稿件{$rid}已被发出。",0);
+        $this->reply("private", $v['qquin'], ($setTime) ? "您的稿件{$rid}已登记定时，将在".date("Y-m-d H:i:s",$setTime)."发出。\n注意：定时稿件不会在各年级群内同步" : "您的稿件{$rid}已被发出。",0);
         if(isset($setTime)) continue;
         usleep(500000);
         $groups = $GLOBALS['sync_groups'];
