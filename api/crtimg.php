@@ -137,8 +137,8 @@
 
     $content = strtr($content, $replaces);
 
-    foreach ($pregs as [$pattern, $replacement]) {
-      $content = preg_replace($pattern + $markdown_replacements, $replacement, $content);
+    foreach (array_merge($pregs, $markdown_replacements) as [$pattern, $replacement]) {
+      $content = preg_replace($pattern, $replacement, $content);
     }
 
     
