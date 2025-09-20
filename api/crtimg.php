@@ -106,40 +106,36 @@
     ["/([\x{1F600}-\x{1F64F}\x{1F300}-\x{1F5FF}\x{1F680}-\x{1F6FF}\x{1F700}-\x{1F77F}\x{1F780}-\x{1F7FF}\x{1F800}-\x{1F8FF}\x{1F900}-\x{1F9FF}\x{1FA00}-\x{1FA6F}\x{1FA70}-\x{1FAFF}])/u","<span class='content' style='font-family:NotoColorEmoji'>$1</span>"]
     );
 
-    $markdown_replacements = [
-    // 标题 (Headers)
-    '/(^#{6}\s*(.*)$)/m'  => '<h6>$2</h6>',
-    '/(^#{5}\s*(.*)$)/m'  => '<h5>$2</h5>',
-    '/(^#{4}\s*(.*)$)/m'  => '<h4>$2</h4>',
-    '/(^#{3}\s*(.*)$)/m'  => '<h3>$2</h3>',
-    '/(^#{2}\s*(.*)$)/m'  => '<h2>$2</h2>',
-    '/(^#{1}\s*(.*)$)/m'  => '<h1>$2</h1>',
+    // Markdown 转 HTML 的正则规则
+    $markdown_pregs = array(
+      // 标题
+      array('/^(#{6})\s*(.*?)$/m', '<h6>$2</h6>'),
+      array('/^(#{5})\s*(.*?)$/m', '<h5>$2</h5>'),
+      array('/^(#{4})\s*(.*?)$/m', '<h4>$2</h4>'),
+      array('/^(#{3})\s*(.*?)$/m', '<h3>$2</h3>'),
+      array('/^(#{2})\s*(.*?)$/m', '<h2>$2</h2>'),
+      array('/^(#{1})\s*(.*?)$/m', '<h1>$2</h1>'),
+      // 粗体
+      array('/\*\*(.*?)\*\*/s', '<strong>$1</strong>'),
+      // 斜体
+      array('/\*(.*?)\*/s', '<em>$1</em>'),
+      // 链接
+      array('/\[(.*?)\]\((.*?)\)/', '<a href="$2">$1</a>'),
+      // 图片
+      array('/!\[(.*?)\]\((.*?)\)/', '<img src="$2" alt="$1">'),
+      // 行内代码
+      array('/`([^`]+)`/', '<code>$1</code>'),
+      // 无序列表
+      array('/^\s*[\*\-\+]\s+(.*)$/m', '<li>$1</li>'),
+      array('/~~(.*?)~~/s', '<del>$1</del>'),
+    );
+    $content = base64_decode($_GET['content']);
 
-    // 加粗和斜体 (Bold and Italic)
-    // 注意顺序，先处理加粗，再处理斜体，以避免冲突
-    '/\*\*(.*?)\*\*/'     => '<strong>$1</strong>',
-    '/\*(.*?)\*/'         => '<em>$1</em>',
-    
-    // 链接 (Links)
-    '/\[(.*?)\]\((.*?)\)/'  => '<a href="$2">$1</a>',
-    
-    // 图片 (Images)
-    '/!\[(.*?)\]\((.*?)\)/' => '<img src="$2" alt="$1">',
-
-    // 行内代码 (Inline Code)
-    '/`(.*?)`/'           => '<code>$1</code>',
-    
-    // 简单的无序列表 (Unordered Lists)
-    // 注意：这个正则表达式只处理单行列表项，不处理多行列表或嵌套
-    '/^\s*[\*\-+]\s+(.*)$/m' => '<li>$1</li>',
-    ];
-    $content = $_GET['content'];
-
-    $content = strtr($content, $replaces);
-
-    foreach (array_merge($pregs, $markdown_replacements) as [$pattern, $replacement]) {
+    foreach (array_merge($pregs, $markdown_pregs) as [$pattern, $replacement]) {
       $content = preg_replace($pattern, $replacement, $content);
     }
+
+    $content = strtr($content, $replaces);
 
     
     echo $content;

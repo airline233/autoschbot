@@ -15,16 +15,24 @@
 ### 1. 相关配置
 - **推荐的PHP版本**：≥7.4.33  
 - **推荐使用的系统**：Debian系均可  
-- **请解除禁用**：`exec`、`shell_exec`函数。
+- **请解除禁用**：`exec`、`shell_exec`、`popen`函数。
+- **注意** 你可能需要在php.ini中手动将“popen”函数从disable列表中删除
 
 ### 2. 管理员配置
 
 #### Linux：
-- 需要安装`wkhtmltopdf`：  
+- 需要安装`pptr-cli`：  
   ```bash
-  apt-get install wkhtmltopdf
+  npm install -g playwright
+  npx playwright install
   ```
 - 需要自行运行符合OneBotv11 Webhook的QQ客户端（推荐使用Napcat）。
+- 请在sudoer文件中添加：
+```
+Defaults:www secure_path="/sbin:/bin:/usr/sbin:/usr/bin:你npx的安装目录
+www ALL=(ALL) NOPASSWD: /www/server/nodejs/v22.19.0/bin/npx
+```
+  npx的安装目录可以通过运行`which npx`来获得
 
 #### 数据库：
 - 数据库为自动创建，即开即用
@@ -48,11 +56,11 @@
 ## 关于数据库
 - 每月的数据会单独建一张表储存。  
 - 每年的数据会单独建一个数据库储存。  
-- `preptable.php`请勿删除，用于建表建数据库。
+- `preptable.php`请勿删除，用于自动建表、建数据库。
 
 ---
 
 **GitHub项目地址**：[高度自动化QQ校园墙Bot](https://github.com/airline233/autoschbot)  
 **开发者**：@Airline233
-**版本**：v1.1.0  
-**最后更新**：2025年8月5日  
+**版本**：v1.2.0  
+**最后更新**：2025年9月20日  

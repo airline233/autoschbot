@@ -85,8 +85,8 @@ class datactrl {
           $stmt = $pdo->prepare("SELECT * FROM $table_name WHERE id=?");
           $stmt->execute([$rid]);
         } else {
-          $stmt = $pdo->prepare("SELECT * FROM $table WHERE status=0");
-          $stmt->execute();
+          $stmt = $pdo->prepare("SELECT * FROM $table WHERE status=0 and timestamp<=datetime(?, 'unixepoch')");
+          $stmt->execute([time() - 600]);
         }
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -165,10 +165,13 @@ class datactrl {
     $msg = urlencode(trim($msg));
     if($sleep === 1) $sleep = rand(5,15); 
     elseif(!$sleep) $sleep = 3;
+    elseif($sleep === 0) $sleep = 1;
     $subtype = ($type == 'private') ? 'user' : 'group';
     $url = "{$GLOBALS['apiaddr']}/send_{$type}_msg?access_token={$GLOBALS['access_token']}";
     $data = "message=$msg&{$subtype}_id=$qquin";
-    @shell_exec("sleep {$sleep} && curl -X POST -d \"$data\" \"$url\" > /dev/null 2>&1 &"); //后台异步执行发送消息，避免阻塞线程导致莫名其妙的bug
+    $command = "nohup bash -c 'sleep {$sleep} && curl -X POST -d \"$data\" \"$url\" > /dev/null 2>&1' &";
+    pclose(popen($command, 'r'));
+    //后台异步执行发送消息，避免阻塞线程导致莫名其妙的bug
     return true;
   }
 
@@ -177,7 +180,7 @@ class datactrl {
     $instance = new qzone($GLOBALS['apiaddr'],$GLOBALS['access_token']);
     $origin = $this->sqlctrl('getunsentcontents', $_rid);
     $_ridtxt = ($_rid) ? "该稿件已发送或已拒稿" : "暂无待发送的稿件";
-    foreach($origin as $v) $this->sqlctrl('setsent', [$v['id'],'']); //预标记已发
+    foreach($origin as $v)  $this->sqlctrl('setsent', [$v['id'],'']); //预标记已发
     if (!$origin[0]) return $_ridtxt;
     $imgs = "";
     foreach ($origin as $v) {
@@ -250,6 +253,7 @@ class datactrl {
     $imgpath = "../tmp/{$rid}.jpg";
     @unlink($imgpath);
     $len = strlen(str_replace('al_p', '', $values['content']));
+    $width = 1080;
     if ($len <= 50 * 3) {
       $width = 1080;
       $values['content'] = str_replace("al_p", "al_h1", $values['content']);
@@ -261,10 +265,12 @@ class datactrl {
       if ($width < 1080) $width = 1080;
     }
     if ($width > 2160) $width = 2160;
-    if (!$width || $width < 1080) $width = 1080;
+    if ($width < 1080) $width = 1080;
+    $values['content'] = base64_encode($values['content']);
     $url = "{$GLOBALS['absaddr']}/api/crtimg.php?content={$values['content']}&date={$values['timestamp']}&signature={$values['signature']}&qquin={$values['qquin']}&rid=$rid&width=$width&bg={$values['bg']}";
-    $shell = "wkhtmltoimage --width $width --quality 100 \"$url\" $imgpath";
-    exec($shell, $rt);
+    $shell = "sudo npx playwright screenshot --viewport-size={$width},720 --wait-for-timeout=1000 \"{$url}\"  {$imgpath} --full-page 2>&1"; //改用playwright截图
+    exec($shell, $rt, $return_var);
+    if(!file_exists($imgpath)) file_put_contents("../tmp/{$rid}.log", $shell.implode("\n", $rt)."\nreturn_var:{$return_var}");
     return "$rid.jpg";
   }
 }
