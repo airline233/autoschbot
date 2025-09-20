@@ -29,8 +29,7 @@ class datactrl {
         $stmt->execute([$datain[0], $datain[1], $datain[2]]);
         $rid = $pdo->lastInsertId();
         return $rid;
-        break;
-
+      
       case 'setdenied':
       /*
       ** 拒稿(done)
@@ -46,7 +45,6 @@ class datactrl {
         $this->reply('private', $qquin, "对不起，您的稿件{$rid}由于“{$reason}”被拒收，请修改不适宜内容后重新投稿");
         @unlink("../tmp/$rid.jpg");
         return 1;
-        break;
 
       case 'setundenied':
       /*
@@ -61,7 +59,6 @@ class datactrl {
         $qquin = $stmt->fetchColumn();
         $this->reply('private', $qquin, "您的稿件{$rid}已被重新接收，请耐心等待发送。");
         return 1;
-        break;
 
       case 'getallids':
       /*
@@ -71,7 +68,6 @@ class datactrl {
         $stmt = $pdo->prepare("SELECT id FROM $table WHERE qquin=?");
         $stmt->execute([$qquin]);
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
-        break;
 
       case 'getunsentcontents':
       /*
@@ -93,7 +89,6 @@ class datactrl {
           $stmt->execute();
         }
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        break;
 
       case 'setsent': //设置发送态 （done）
         $id = $datain[0];
@@ -101,13 +96,11 @@ class datactrl {
         $stmt = $pdo->prepare("UPDATE $table SET `status`=1,`tid`=? WHERE `id`=?");
         $stmt->execute([$tid,$id]);
         return 1;
-        break;
 
       case 'setcancelled': //撤稿（done）
         $stmt = $pdo->prepare("UPDATE $table SET `status`=5 WHERE `id`=? AND `qquin`=? AND `status`=0");
         $stmt->execute([round($datain[0]), intval($datain[1])]);
         return ($stmt->rowCount() == 1) ? 1 : 0;
-        break;
 
       case 'setsign':
       /*
@@ -126,7 +119,6 @@ class datactrl {
           $stmt->execute([$signature, $qquin]);
         }
         return ($stmt->rowCount() == 1) ? 1 : 0;
-        break;
 
       case 'getsign':
       /*
@@ -138,7 +130,6 @@ class datactrl {
         $stmt = $_pdo->prepare("SELECT `sign` FROM `users` WHERE `qquin`=?");
         $stmt->execute([$qquin]);
         return $stmt->fetchColumn();
-        break;
 
       case 'setTime':
       /*
@@ -153,34 +144,32 @@ class datactrl {
         $stmt = $pdo->prepare("UPDATE $table SET `setTime`=? WHERE `id`=? AND `qquin`=? AND `status` = 0");
         $stmt -> execute([$setTime,$rid, $qquin]);
         return ($stmt->rowCount() == 1) ? 1 : 0;
-        break;
       
       case 'getblacklists':
         return $_pdo -> query('SELECT * FROM `users` WHERE `banned` = 1') -> fetchAll(PDO::FETCH_ASSOC);
-        break;
           
       case 'setban':
         if($datain[2] == 1) 
           $datain[0] = $pdo -> query("SELECT `qquin` FROM `{$table}` WHERE `id` = {$datain[0]}") ->fetchColumn();
         return $_pdo -> exec("UPDATE `users` SET `banned` = {$datain[1]} WHERE `qquin` = {$datain[0]}");
-        break;
         
       case 'query':
         return $pdo -> query("SELECT `qquin` FROM `{$table}` WHERE `id` = {$datain}") ->fetchColumn();
-        break;
           
       default:
         return "undefined func";
-        break;
     }
   }
 
   function reply($type, $qquin, $msg, $sleep=1) {
     $msg = urlencode(trim($msg));
-    if($sleep) sleep(rand(5,15)); 
-    if(!$sleep) sleep(3);
-    if ($type == 'private') return curl("{$GLOBALS['apiaddr']}/send_private_msg?access_token={$GLOBALS['access_token']}", "message=$msg&user_id=$qquin");
-    if ($type == 'group') return curl("{$GLOBALS['apiaddr']}/send_group_msg?access_token={$GLOBALS['access_token']}", "message=$msg&group_id=$qquin");
+    if($sleep === 1) $sleep = rand(5,15); 
+    elseif(!$sleep) $sleep = 3;
+    $subtype = ($type == 'private') ? 'user' : 'group';
+    $url = "{$GLOBALS['apiaddr']}/send_{$type}_msg?access_token={$GLOBALS['access_token']}";
+    $data = "message=$msg&{$subtype}_id=$qquin";
+    @shell_exec("sleep {$sleep} && curl -X POST -d \"$data\" \"$url\" > /dev/null 2>&1 &"); //后台异步执行发送消息，避免阻塞线程导致莫名其妙的bug
+    return true;
   }
 
   function sendqzone($_rid = null, $time = null) { //发空间 目前是一条稿件对应一条说说，图片单独发出
@@ -188,6 +177,7 @@ class datactrl {
     $instance = new qzone($GLOBALS['apiaddr'],$GLOBALS['access_token']);
     $origin = $this->sqlctrl('getunsentcontents', $_rid);
     $_ridtxt = ($_rid) ? "该稿件已发送或已拒稿" : "暂无待发送的稿件";
+    foreach($origin as $v) $this->sqlctrl('setsent', [$v['id'],'']); //预标记已发
     if (!$origin[0]) return $_ridtxt;
     $imgs = "";
     foreach ($origin as $v) {
@@ -211,7 +201,6 @@ class datactrl {
             $sendrt .= "$rid error！！！{$json}[CQ:at,qq={$GLOBALS['superadmin']}]\n";
             continue;
             endif;
-        $this->sqlctrl('setsent', [$v['id'],$tid]);
         $this->reply("private", $v['qquin'], ($setTime) ? "您的稿件{$rid}已登记定时，将在".date("Y-m-d H:i:s",$setTime)."发出。\n注意：定时稿件不会在各年级群内同步" : "您的稿件{$rid}已被发出。",0);
         $sendrt .= $rid . " ";
         $rids .= $rid.",";
@@ -242,13 +231,12 @@ class datactrl {
   }
 
   function submit($raw, $_hide = null) {
-    if($raw[0] == $GLOBALS['superadmin']) $raw[0] = round($raw[0] * rand(100,500) / 100);
     $rid = $this->sqlctrl('insert', $raw);
     $this->crtimg($rid);
     $msg = "收到投稿,ID:{$rid}：[CQ:image,url={$GLOBALS['absaddr']}/tmp/{$rid}.jpg]";
     if($_hide) exit;
-    foreach ($GLOBALS['supergroups'] as $gid) $this->reply("group", $gid, $msg, 0);
     $this->reply('private', $raw[0], $msg, 0);
+    foreach ($GLOBALS['supergroups'] as $gid) $this->reply("group", $gid, $msg, 600); //延迟10min发出，给发稿人反悔的机会，防止审核过快
     return $rid;
   }
 

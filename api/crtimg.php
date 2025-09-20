@@ -105,13 +105,43 @@
     
     ["/([\x{1F600}-\x{1F64F}\x{1F300}-\x{1F5FF}\x{1F680}-\x{1F6FF}\x{1F700}-\x{1F77F}\x{1F780}-\x{1F7FF}\x{1F800}-\x{1F8FF}\x{1F900}-\x{1F9FF}\x{1FA00}-\x{1FA6F}\x{1FA70}-\x{1FAFF}])/u","<span class='content' style='font-family:NotoColorEmoji'>$1</span>"]
     );
+
+    $markdown_replacements = [
+    // 标题 (Headers)
+    '/(^#{6}\s*(.*)$)/m'  => '<h6>$2</h6>',
+    '/(^#{5}\s*(.*)$)/m'  => '<h5>$2</h5>',
+    '/(^#{4}\s*(.*)$)/m'  => '<h4>$2</h4>',
+    '/(^#{3}\s*(.*)$)/m'  => '<h3>$2</h3>',
+    '/(^#{2}\s*(.*)$)/m'  => '<h2>$2</h2>',
+    '/(^#{1}\s*(.*)$)/m'  => '<h1>$2</h1>',
+
+    // 加粗和斜体 (Bold and Italic)
+    // 注意顺序，先处理加粗，再处理斜体，以避免冲突
+    '/\*\*(.*?)\*\*/'     => '<strong>$1</strong>',
+    '/\*(.*?)\*/'         => '<em>$1</em>',
+    
+    // 链接 (Links)
+    '/\[(.*?)\]\((.*?)\)/'  => '<a href="$2">$1</a>',
+    
+    // 图片 (Images)
+    '/!\[(.*?)\]\((.*?)\)/' => '<img src="$2" alt="$1">',
+
+    // 行内代码 (Inline Code)
+    '/`(.*?)`/'           => '<code>$1</code>',
+    
+    // 简单的无序列表 (Unordered Lists)
+    // 注意：这个正则表达式只处理单行列表项，不处理多行列表或嵌套
+    '/^\s*[\*\-+]\s+(.*)$/m' => '<li>$1</li>',
+    ];
     $content = $_GET['content'];
-    foreach ($replaces as $ori => $aft) {
-      $content = str_replace($ori,$aft,$content);
+
+    $content = strtr($content, $replaces);
+
+    foreach ($pregs as [$pattern, $replacement]) {
+      $content = preg_replace($pattern + $markdown_replacements, $replacement, $content);
     }
-    foreach ($pregs as $preg) {
-      $content = preg_replace($preg[0],$preg[1],$content);
-    }
+
+    
     echo $content;
     ?>
       <div class="author">

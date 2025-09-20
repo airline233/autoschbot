@@ -32,7 +32,6 @@ class qzone {
         $this -> pskey = $ckarr['p_skey'];
         $this -> token = $rt['data']['bkn'];
         $this -> HostUin = json_decode($this -> curl($apiaddr."/get_login_info?access_token=$actk"),1)['data']['user_id'];
-        return 1;
     }
 
     public function publish ($Content, $RichType = null, $Richval = null, $setTime = null, $ugcRight = 1, $allowUins = null) {
@@ -147,7 +146,6 @@ class qzone {
             case 'url':
                 $url = $arr['data']['url'];
                 return $url;
-                break;
             case 'Richval':
                 $albumid = $arr['data']['albumid'];
                 $lloc = $arr['data']['lloc'];
@@ -156,10 +154,8 @@ class qzone {
                 $height = $arr['data']['height'];
                 $width = $arr['data']['width'];
                 return ",$albumid,$lloc,$sloc,$type,$height,$width,,$height,$width";
-                break;
             dafault:
                 return 'Invalid rtType';
-                break;
         }
     }
 

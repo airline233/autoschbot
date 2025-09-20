@@ -50,5 +50,5 @@ if(strlen($time) != 16) {
 if(!is_dir("cq_log/$date")) mkdir("cq_log/$date");
 if(@file_get_contents("cq_log/$date/$time.log")) exit;
 file_put_contents("cq_log/$date/$time.log",$json);
-exec("nohup curl {$GLOBALS['absaddr']}/api/dealmsg.php --data logfile=$date/$time.log > /dev/null &");
+exec("curl {$GLOBALS['absaddr']}/api/dealmsg.php --data logfile=$date/$time.log > /dev/null 2>&1 &");
 //一个及其蹩脚的假消息队列，曾经是用来防止线程阻塞的（go-cqhttp时代用的，我也不知道为什么要这样写，因为懒得动我的屎山代码就保留了下来...)
