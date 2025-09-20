@@ -80,7 +80,7 @@ class qzone {
         $result = $this -> post('/emotion_cgi_publish_'.$ist.'v6', $data);
         $arr = json_decode($result,1);
         if($arr['subcode'] != 0) return $arr;
-        return $arr['t1_tid'];
+        return $arr['t1_tid'] ?? $arr['tid'];
     }
 
     public function upload ($File, $Type = 'base64', $rtType = 'Richval') {

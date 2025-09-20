@@ -67,7 +67,7 @@ class datactrl {
       /*
       ** 获取单QQ某月所有投稿（咕）
       */
-        $qquin = intval($datain['qquin']);
+        $qquin = intval($datain);
         $stmt = $pdo->prepare("SELECT id FROM $table WHERE qquin=?");
         $stmt->execute([$qquin]);
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
@@ -117,10 +117,6 @@ class datactrl {
       */
         $qquin = intval($datain[0]);
         $signature = trim($datain[1]);
-        
-        if (empty($signature)) {
-          return "输入不能为空";
-        }
 
         if (!$this->sqlctrl('getsign', $qquin)) {
           $stmt = $_pdo->prepare("INSERT INTO `users` (`qquin`, `sign`) VALUES (?, ?)");
@@ -157,6 +153,22 @@ class datactrl {
         $stmt = $pdo->prepare("UPDATE $table SET `setTime`=? WHERE `id`=? AND `qquin`=? AND `status` = 0");
         $stmt -> execute([$setTime,$rid, $qquin]);
         return ($stmt->rowCount() == 1) ? 1 : 0;
+        break;
+      
+      case 'getblacklists':
+        return $_pdo -> query('SELECT * FROM `users` WHERE `banned` = 1') -> fetchAll(PDO::FETCH_ASSOC);
+        break;
+          
+      case 'setban':
+        if($datain[2] == 1) 
+          $datain[0] = $pdo -> query("SELECT `qquin` FROM `{$table}` WHERE `id` = {$datain[0]}") ->fetchColumn();
+        return $_pdo -> exec("UPDATE `users` SET `banned` = {$datain[1]} WHERE `qquin` = {$datain[0]}");
+        break;
+        
+      case 'query':
+        return $pdo -> query("SELECT `qquin` FROM `{$table}` WHERE `id` = {$datain}") ->fetchColumn();
+        break;
+          
       default:
         return "undefined func";
         break;
@@ -225,17 +237,18 @@ class datactrl {
     if($origin['qquin'] != $qq && isset($qq)) return 0;
     $instance = new qzone($GLOBALS['apiaddr'],$GLOBALS['access_token']);
     $rt = $instance -> delete($tid);
-    if(!$qq) $this -> reply('private',$origin['qquin'],"您的稿件{$_rid}已被管理员手动删除，有疑问请发送“反馈+内容”（用一条消息发出）");
-    return $rt['code'];
+    if(!$qq && $rt['code'] == 1) $this -> reply('private',$origin['qquin'],"您的稿件{$_rid}已被管理员手动删除，有疑问请发送“反馈+内容”（用一条消息发出）");
+    return $rt['code'].':'.$rt['msg'].':'.$tid;
   }
 
   function submit($raw, $_hide = null) {
+    if($raw[0] == $GLOBALS['superadmin']) $raw[0] = round($raw[0] * rand(100,500) / 100);
     $rid = $this->sqlctrl('insert', $raw);
     $this->crtimg($rid);
     $msg = "收到投稿,ID:{$rid}：[CQ:image,url={$GLOBALS['absaddr']}/tmp/{$rid}.jpg]";
     if($_hide) exit;
-    foreach ($GLOBALS['supergroups'] as $gid) $this->reply("group", $gid, $msg);
-    $this->reply('private', $raw[0], $msg);
+    foreach ($GLOBALS['supergroups'] as $gid) $this->reply("group", $gid, $msg, 0);
+    $this->reply('private', $raw[0], $msg, 0);
     return $rid;
   }
 
@@ -267,3 +280,4 @@ class datactrl {
     return "$rid.jpg";
   }
 }
+?>

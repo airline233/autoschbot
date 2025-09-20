@@ -24,13 +24,16 @@
             if(!$_GET['bg']) echo "background-image: url('bingimg.php');";
             if($_GET['bg']) echo "background:".$_GET['bg'].";";
             ?>
+                    width: 100%;
+        height: 100%;
+        backdrop-filter: blur(10px);
         }
         
         .container {
             width: 95%;
             max-width: 75%;
             margin: 8% auto;
-            background-color: rgba(112,123,124,0.65);
+            background-color: rgba(255,255,255,0.75);/* rgba(112,123,124,0.8); */
             padding: 6%;
             padding-bottom: 1%;
             padding-top: 3%;
@@ -60,17 +63,22 @@
             color: #030303;
             line-height: 1.3;
             font-family: SiYuanRegular;
-            opacity: 0.75;
+            opacity: 0.9;
         }
         
         .content {
             font-size: <?php echo round($width/20); ?>px;
             color: #030303;
-            line-height: 1.2;
+            line-height: 1.35;
             margin-bottom: 2px;
             margin-top: 0px;
-            opacity: 0.75;
+            opacity: 0.9;
+            font-weight: bold;
+            font-family: SiYuanRegular;
         }
+      .outlined {
+           -webkit-text-stroke: <?php echo round($width/600); ?>px white;
+      }
     </style>
 </head>
 <body>
@@ -124,8 +132,8 @@
         <div class="text-container">  
         <?php
         echo "<p style=\"font-size:".($width/32)."px; opacity:0.6; color:black; margin-top:0px; margin-right:0px; margin-bottom:0px;\">$signature $date</p>";
-        echo "<p style='color:black;font-size:".($width/32)."px;margin-top: 0px; margin-bottom:0px;'>ID:{$_GET['rid']}</p>";
-        //echo "<center><p style=\"font-size:".($width/38)."px; opacity:0.48; color:black; margin-top:0px; margin-bottom:0px;\">哈喽 歪瑞巴蒂~(＾◇^)/我是雨花台中学全自动万能表白墙，7*24h全天为您服务，最快即刻发出(˵¯͒〰¯͒˵)还在等什么，火速将QQ2060574537推荐给你的同学们吧~</p><br /><p style=\"font-size:".($width/32)."px; opacity:0.6; color:#f6ff42; margin-top:0px; margin-bottom:0px;\">表白墙投稿会同步至群376132742内，若有其他年级的学生大群欢迎联系墙墙加入~</p></center>";
+        echo "<p style='color:yellow;font-size:".($width/32)."px;margin-top: 0px; margin-bottom:0px;'>ID:{$_GET['rid']}</p>";
+        echo "<center><p class='outlined' style=\"font-size:".($width/20)."px; opacity:0.88; color: #32A0A8; margin-top:0px; margin-bottom:0px;\">还！没！加！墙！墙！的！快！来！加！我！QQ2060574537</p></center>";
         //<br />另：现招收内容审核员兼推广员5位，只需每日抽出5分钟查看群消息即可<span style='font-family:NotoColorEmoji'>🤓👆🏻</span>享受劲爆内容提前看特权噢<span style='font-family:NotoColorEmoji'>👀</span><br />仅需邀请10名好友添加墙墙就可以咯₍˄·͈༝·͈˄*₎◞ ̑̑具体可私聊墙墙发送“反馈+申请审核员”
         ?>
         </div>

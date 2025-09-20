@@ -17,6 +17,7 @@ function curl($url,$data=null) {
   return $content;
 }
 $time=time().rand(1000,9999);
+$tm = '';
 for($i=5;$i<=10;$i++) {
   $tm .= $time[$i];
 }
@@ -25,6 +26,7 @@ $json = file_get_contents("php://input");
 $msginfo = json_decode($json,true);
 $confs = json_decode(file_get_contents('config.json'),1);
 foreach ($confs as $n => $v) $GLOBALS[$n] = $v;
+if(!isset($msginfo['request_type'])) $msginfo['request_type'] = "msg";
 if($msginfo['request_type'] == "friend") {
   sleep(rand(5,60));
   $remark = explode("回答:",$msginfo['comment'])[1];

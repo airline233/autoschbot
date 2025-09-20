@@ -12,6 +12,8 @@ $confs = json_decode(file_get_contents('config.json'),1);
 foreach ($confs as $n => $v) $GLOBALS[$n] = $v;
 $deal = new datactrl(); //初始化操作类
 
+foreach ($deal -> sqlctrl('getblacklists') as $line) if(array_search($qquin,$line) ) exit;
+
 if(!file_exists("../tmp")) mkdir("../tmp");
 
 if($RawMsgArr['message_type'] == 'private') {
@@ -19,22 +21,22 @@ if($RawMsgArr['message_type'] == 'private') {
     foreach($GLOBALS['supergroups'] as $gid) $deal -> reply("group",$gid,"收到反馈($qquin)：{$msg}");
     $deal -> reply("private",$qquin,"反馈提交成功！");
     exit;
-  elseif(strpos($msg,"署名")  !== false && strpos($_msg,"署名") < 10) :
-    $msg_t = trim(mb_substr($_msg,5));
+  elseif(strpos($msg,"署名")  !== false && mb_strpos($msg,"署名") == 2) :
+    $msg_t = trim(mb_substr($msg,4));
     $signature = $msg_t ?? "_dynamic";
     $stats = $deal -> sqlctrl("setsign",[$qquin,$signature]);
-    $signature = $msg_t ?? "您的实时昵称";
+    $signature = $msg_t ?? "您的昵称({$qqname})";
     $rtx = ($stats == 1) ? "成功设置署名为{$signature}。" : "设置署名失败，请联系管理员！";
     $deal -> reply("private",$qquin,$rtx);
     exit;
   elseif(strpos($msg,"撤稿") === 0):
-    $msg_t = trim(mb_substr($msg,3));
+    $msg_t = trim(mb_substr($msg,2));
     $rts = $deal -> sqlctrl("setcancelled",[$msg_t,$qquin]);
     $deal -> reply("private",$qquin,($rts == 1) ? "成功撤回ID为{$msg_t}的稿件" : "撤稿失败，该稿件已发出/被拒/撤回或输入了错误的稿件ID。");
     if($rts == 1) foreach($GLOBALS['supergroups'] as $gid) $deal -> reply("group",$gid,"稿件{$msg_t}已被发稿人撤回。");
     exit;
   elseif(strpos($msg,"删稿") === 0):
-    $msg_t = trim(mb_substr($msg,3));
+    $msg_t = trim(mb_substr($msg,2));
     $rts = $deal -> delqzone($msg_t,$qquin);
     $deal -> reply("private",$qquin,($rts == 1) ? "成功删除了ID为{$msg_t}的稿件（注意，同步在群内的无法撤回）" : "删稿失败，可能是输入了错误的稿件ID。");
     if($rts == 1) foreach($GLOBALS['supergroups'] as $gid) $deal -> reply("group",$gid,"稿件{$msg_t}已被发稿人主动删除。");
@@ -122,7 +124,7 @@ if($RawMsgArr['message_type'] == 'private') {
         fclose($file);
         exit;
       else:
-        if(strstr($msg,'自动回复')) exit;
+        if(strstr($msg,'自动回复')) exit; //防止循环
         $deal -> reply("private",$qquin,"欢迎投稿🎉发送“帮助”获取使用方法");
       endif;
       break;
@@ -139,22 +141,37 @@ if($RawMsgArr['message_type'] == 'private') {
 
     case 'deny':
     case 'undeny':
+    case 'ban':
       $cmd[0] = "set".str_replace("deny","denied",$cmd[0]);
-      $content = $deal -> sqlctrl($cmd[0],[$cmd[1],$cmd[2]]);
+      if(!isset($cmd[3])) $cmd[3] = '';
+      $content = $deal -> sqlctrl($cmd[0],[$cmd[1],$cmd[2],$cmd[3]]);
     break;
     
     case 'sendmsg':
-      if($RawMsgArr['user_id'] != $GLOBALS['superadm']) exit;
+    case 'reply':
+      if($RawMsgArr['user_id'] != $GLOBALS['superadmin']) exit;
       $deal -> reply($cmd[1],$cmd[2],$cmd[3]);
       $content = "done.";
-      exit;
+    break;
+    
+    case 'query':
+      if($RawMsgArr['user_id'] != $GLOBALS['superadmin']) exit;
+      $content = $deal -> sqlctrl($cmd[0],$cmd[1]);
+      if($cmd[0] == 'query') $content = "[CQ:contact,type=qq,id={$content}]";
+    break;
+    
+    case 'getblacklists':
+    case 'getallids':
+      if(!isset($cmd[1])) $cmd[1] = '';
+      $content = json_encode($deal -> sqlctrl($cmd[0],$cmd[1]));
     break;
   }
   if($cmd[0] == "crtimg") $content = "[CQ:image,url={$GLOBALS['absaddr']}/tmp/{$content}]";
   if(isset($content)) :
     $deal -> reply("group",$RawMsgArr['group_id'],$content);
     if($cmd[0] == 'crtimg') exit;
-    foreach ($GLOBALS['supergroups'] as $gid)$deal -> reply("group",$gid,$cmd[0].":".$cmd[1].":".$cmd[2]);
+    //foreach ($GLOBALS['supergroups'] as $gid)$deal -> reply("group",$gid,$cmd[0].":".$cmd[1].":".$cmd[2]);
     var_dump($content);
   endif;
 }
+?>
