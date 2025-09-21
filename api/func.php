@@ -236,7 +236,13 @@ class datactrl {
   function submit($raw, $_hide = null) {
     $rid = $this->sqlctrl('insert', $raw);
     $this->crtimg($rid);
-    $msg = "收到投稿,ID:{$rid}：[CQ:image,url={$GLOBALS['absaddr']}/tmp/{$rid}.jpg]";
+    if(strstr($raw[2],'image')) :
+      preg_match_all("/\[al_image\](.*?)\[\/al_image\]/s",$raw[2],$addimgs);
+      $addimgs = $addimgs[1];
+      endif;
+    foreach ($addimgs as $img) 
+      $sendcontent .= "[CQ:image,url={$GLOBALS['absaddr']}/upload/{$img}]";
+    $msg = "收到投稿,ID:{$rid}：[CQ:image,url={$GLOBALS['absaddr']}/tmp/{$rid}.jpg]".$sendcontent;
     if($_hide) exit;
     $this->reply('private', $raw[0], $msg, 0);
     foreach ($GLOBALS['supergroups'] as $gid) $this->reply("group", $gid, $msg, 600); //延迟10min发出，给发稿人反悔的机会，防止审核过快
