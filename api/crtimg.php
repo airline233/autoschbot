@@ -100,10 +100,16 @@
       ['/\[al_image]([0-9]*?.jpg)\[\/al_image\]\[al_image\]([0-9]*?.jpg)\[\/al_image\]/is',
     "<div style='text-align: center'><img style=\"width:45%\" src=\"../upload/$1\" /><img style=\"width:45%\" src=\"../upload/$2\" /></div>"],
     
-    ["/\[al_image\]([0-9]*?.jpg)\[\/al_image\]/is",
+      ["/\[al_image\]([0-9]*?.jpg)\[\/al_image\]/is",
+    "<img style=\"width: 95%; margin: auto;\" src='../upload/$1' />"],
+
+      ['/\[al_sticker]([0-9]*?.jpg)\[\/al_sticker\]\[al_sticker\]([0-9]*?.jpg)\[\/al_sticker\]/is',
+    "<div style='text-align: center'><img style=\"width:45%\" src=\"../upload/$1\" /><img style=\"width:45%\" src=\"../upload/$2\" /></div>"],
+
+      ["/\[al_sticker\]([0-9]*?.jpg)\[\/al_sticker\]/is",
     "<img style=\"width: 95%; margin: auto;\" src='../upload/$1' />"],
     
-    ["/([\x{1F600}-\x{1F64F}\x{1F300}-\x{1F5FF}\x{1F680}-\x{1F6FF}\x{1F700}-\x{1F77F}\x{1F780}-\x{1F7FF}\x{1F800}-\x{1F8FF}\x{1F900}-\x{1F9FF}\x{1FA00}-\x{1FA6F}\x{1FA70}-\x{1FAFF}])/u","<span class='content' style='font-family:NotoColorEmoji'>$1</span>"]
+      ["/([\x{1F600}-\x{1F64F}\x{1F300}-\x{1F5FF}\x{1F680}-\x{1F6FF}\x{1F700}-\x{1F77F}\x{1F780}-\x{1F7FF}\x{1F800}-\x{1F8FF}\x{1F900}-\x{1F9FF}\x{1FA00}-\x{1FA6F}\x{1FA70}-\x{1FAFF}])/u","<span class='content' style='font-family:NotoColorEmoji'>$1</span>"]
     );
 
     // Markdown 转 HTML 的正则规则

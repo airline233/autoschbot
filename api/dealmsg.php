@@ -113,7 +113,8 @@ if($RawMsgArr['message_type'] == 'private') {
             case 'image': 
               $filename = date('Ymd').date('His').rand(10000,99999);
               file_put_contents("../upload/$filename.jpg",curl($msgs['data']['url'],null,1));
-              $content .= "[al_image]$filename.jpg[/al_image]";
+              if($msgs['data']['summary'] == '[图片]') $content .= "[al_image]$filename.jpg[/al_image]";
+              else $content .= "[al_sticker]$filename.jpg[/al_sticker]";
               break;
             case 'face': 
               $content .= "[al_face]{$msgs['data']['id']}[/al_face]";
