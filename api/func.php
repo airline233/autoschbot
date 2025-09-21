@@ -236,7 +236,7 @@ class datactrl {
   function submit($raw, $_hide = null) {
     $rid = $this->sqlctrl('insert', $raw);
     $this->crtimg($rid);
-    if(strstr($raw[2],'image')) :
+    if(strstr(urldecode($raw[2])'image')) :
       preg_match_all("/\[al_image\](.*?)\[\/al_image\]/s",$raw[2],$addimgs);
       $addimgs = $addimgs[1];
       endif;
