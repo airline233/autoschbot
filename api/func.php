@@ -236,10 +236,11 @@ class datactrl {
   function submit($raw, $_hide = null) {
     $rid = $this->sqlctrl('insert', $raw);
     $this->crtimg($rid);
-    if(strstr(urldecode($raw[2])'image')) :
-      preg_match_all("/\[al_image\](.*?)\[\/al_image\]/s",$raw[2],$addimgs);
+    if(strstr(urldecode($raw[2]),'image')) :
+      preg_match_all("/\[al_image\](.*?)\[\/al_image\]/s",urldecode($raw[2]),$addimgs);
       $addimgs = $addimgs[1];
       endif;
+    $sendcontent = "";
     foreach ($addimgs as $img) 
       $sendcontent .= "[CQ:image,url={$GLOBALS['absaddr']}/upload/{$img}]";
     $msg = "收到投稿,ID:{$rid}：[CQ:image,url={$GLOBALS['absaddr']}/tmp/{$rid}.jpg]".$sendcontent;
