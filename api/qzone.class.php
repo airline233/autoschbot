@@ -64,7 +64,8 @@ class qzone {
             'special_url' => null,
             'subrichtype' => null,
             'con' => $Content,
-            'feedversion' => '1&ver=1', //这俩应该都不动 写一起了 实际上是两个参数
+            'feedversion' => '1',
+            'ver' => '1', 
             'ugc_right' => $ugcRight, //权限 1为所有人可见 4为好友可见 64为仅自己可见
             'allow_uins' => $allowUins,
             'who' => (empty($allowUins)) ? null : 1,
@@ -198,17 +199,16 @@ class qzone {
         $postdata = array(
             'hostuin' => $this -> HostUin,
             'tid' => $Tid,
-            't1_source' => '1&code_version=1',
+            't1_source' => '1',
+            'code_version' => '1',
             'format' => 'json',
             'qzreferrer=https%3A%2F%2Fuser.qzone.qq.com%2F'. $this -> HostUin
         );
         $result = $this -> post('/emotion_cgi_delete_v6',$postdata);
-        if (is_numeric($result)) return array('code' => 0,'msg' => 'Req error Httpcode:'.$result); // 请求失败的话返回HTTP状态码
-        /*$result = '(' . $this -> cut("frameElement.callback(","</script>",$result);
-        $arr = json_decode($this -> cut("(",");",$result),1);*/ 
+        if (is_numeric($result)) return array('code' => 0,'msg' => 'Req error Httpcode:'.$result); // 请求失败则返回HTTP状态码
         $arr = json_decode($result,1);
-        if($arr['subcode'] == 0) return array('code' => 1); //成功时 subcode返回的是0，失败-200
-        return array('code' => 0);
+        if($arr['subcode'] == 0) return array('code' => 1); //成功时 subcode返回的是0，失败-200或其他
+        return array('code' => 0, 'msg' => $result);
     }
 
     public function comment ($Tid, $Content, $RichType = null, $Richval = null) {
@@ -242,10 +242,8 @@ class qzone {
         );
         $result = $this -> post('/emotion_cgi_re_feeds',$postdata);
         if (is_numeric($result)) return array('code' => 0,'msg' => 'Req error Httpcode:'.$result); // 请求失败的话返回HTTP状态码
-        /*$result = '(' . $this -> cut("frameElement.callback(","</script>",$result);
-        $arr = json_decode($this -> cut("(",");",$result),1); 历史遗留 */
         $arr = json_decode($result,1);
-        if($arr['subcode'] == 0) return array('code' => 1); //成功时 subcode返回的是0，失败-800（也有可能是其他的）
+        if($arr['subcode'] == 0) return array('code' => 1); //成功时 subcode返回的是0，失败-800或其他
         return array('code' => 0,'msg' => $arr['message'],'subcode' => $arr['subcode']);
     }
 
@@ -260,8 +258,10 @@ class qzone {
         if ($Type == 'user') $url = 'https://user.qzone.qq.com/proxy/domain/taotao.qzone.qq.com/cgi-bin'.$Path.'?g_tk='.$this -> token;
         elseif ($Type == 'upload') $url = 'https://up.qzone.qq.com/cgi-bin'.$Path.'?g_tk='.$this -> token;
         else return array('code' => 0,'msg' => 'Invalid Type');
-        $postdata = $Params;
-        if(is_array($Params)) foreach ($Params as $key => $value) $postdata .= "$key=".urlencode($value)."&";
+        $postdata = '';
+        if(is_array($Params)) $postdata = http_build_query($Params);
+        //foreach ($Params as $key => $value) $postdata .= "$key=".urlencode($value)."&";
+        else $postdata = $Params;
         $postdata = rtrim($postdata, '&');
         $result = $this -> curl($url, $postdata);
         return $result;

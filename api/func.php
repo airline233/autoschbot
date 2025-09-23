@@ -199,6 +199,7 @@ class datactrl {
         $imgs = $instance -> upload($imgpath,'file')."\t";
         foreach($addimgs as $img) $imgs .= $instance -> upload("../upload/".$img,'file')."\t";
         $tid = $instance -> publish($rid,1,rtrim($imgs,"\t"),$setTime);
+        $this->sqlctrl('setsent', [$v['id'],$tid]); //更新Tid
         if(is_array($tid)):
             $json = json_encode($tid);
             $sendrt .= "$rid error！！！{$json}[CQ:at,qq={$GLOBALS['superadmin']}]\n";
