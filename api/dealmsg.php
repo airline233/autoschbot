@@ -137,7 +137,7 @@ if($RawMsgArr['message_type'] == 'private') {
     case 'crtimg':
     case 'delqzone';
       $cmd[0] = str_replace("send","sendqzone",$cmd[0]);
-      $content = eval('return $deal -> '."{$cmd[0]}({$cmd[1]});");
+      $content = eval('return $deal -> '."{$cmd[0]}('{$cmd[1]}');");
     break;
 
     case 'deny':

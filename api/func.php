@@ -225,13 +225,19 @@ class datactrl {
 
   function delqzone($_rid, $qq = null) { //删稿 传入rid和qq号（可选 便于管理员删稿）
     require_once('qzone.class.php');
-    $origin = $this->sqlctrl('getunsentcontents', $_rid)[0];
-    $tid = $origin['tid'];
-    if($origin['qquin'] != $qq && isset($qq)) return 0;
-    $instance = new qzone($GLOBALS['apiaddr'],$GLOBALS['access_token']);
-    $rt = $instance -> delete($tid);
-    if(!$qq && $rt['code'] == 1) $this -> reply('private',$origin['qquin'],"您的稿件{$_rid}已被管理员手动删除，有疑问请发送“反馈+内容”（用一条消息发出）");
-    return $rt['code'].':'.$rt['msg'].':'.$tid;
+    $rids = explode(',', $_rid);
+    $_rt = '';
+    foreach($rids as $rid) {
+      if(!is_numeric($rid)) return 'Invaild ID';
+      $origin = $this->sqlctrl('getunsentcontents', $rid)[0];
+      $tid = $origin['tid'];
+      if($origin['qquin'] != $qq && isset($qq)) return 0;
+      $instance = new qzone($GLOBALS['apiaddr'],$GLOBALS['access_token']);
+      $rt = $instance -> delete($tid);
+      if(!$qq && $rt['code'] == 1) $this -> reply('private',$origin['qquin'],"您的稿件{$_rid}已被管理员手动删除，有疑问请发送“反馈+内容”（用一条消息发出）");
+      $_rt .= $rt['code'].':'.$rt['msg'].':'.$tid."\n";
+    }
+    return trim($_rt,"\n");
   }
 
   function submit($raw, $_hide = null) {
@@ -276,9 +282,14 @@ class datactrl {
     if ($width < 1080) $width = 1080;
     $values['content'] = base64_encode($values['content']);
     $url = "{$GLOBALS['absaddr']}/api/crtimg.php?content={$values['content']}&date={$values['timestamp']}&signature={$values['signature']}&qquin={$values['qquin']}&rid=$rid&width=$width&bg={$values['bg']}";
-    $shell = "sudo npx playwright screenshot --viewport-size={$width},720 --wait-for-timeout=1000 \"{$url}\"  {$imgpath} --full-page 2>&1"; //改用playwright截图
+    $shell = "sudo playwright screenshot --viewport-size={$width},720 --wait-for-timeout=1000 \"{$url}\"  {$imgpath} --full-page 2>&1"; //改用playwright截图
     exec($shell, $rt, $return_var);
-    if(!file_exists($imgpath)) file_put_contents("../tmp/{$rid}.log", $shell.implode("\n", $rt)."\nreturn_var:{$return_var}");
+    if(!file_exists($imgpath)) :
+      exec('sudo playwright install', $rt, $return_var);
+      exec($shell, $rt, $return_var);
+      file_put_contents("../tmp/{$rid}.log", $shell.implode("\n", $rt)."\nreturn_var:{$return_var}");
+      endif;
+    if(!file_exists($imgpath)) return "error!!!";
     return "$rid.jpg";
   }
 }

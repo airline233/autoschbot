@@ -23,16 +23,16 @@
 #### Linux：
 - 需要安装`pptr-cli`：  
   ```bash
-  npm install -g playwright
-  npx playwright install
+  sudo npm install -g playwright
+  sudo playwright install
   ```
 - 需要自行运行符合OneBotv11 Webhook的QQ客户端（推荐使用Napcat）。
 - 请在sudoer文件中添加：
 ```
-Defaults:www secure_path="/sbin:/bin:/usr/sbin:/usr/bin:你npx的安装目录
-www ALL=(ALL) NOPASSWD: /www/server/nodejs/v22.19.0/bin/npx
+Defaults:www secure_path="/sbin:/bin:/usr/sbin:/usr/bin:你playwright的安装目录
+www ALL=(ALL) NOPASSWD: 你playwright的安装目录
 ```
-  npx的安装目录可以通过运行`which npx`来获得
+  playwright的安装目录可以通过运行`which playwright`来获得，
 
 #### 数据库：
 - 数据库为自动创建，即开即用
