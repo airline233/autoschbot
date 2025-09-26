@@ -95,7 +95,7 @@
     
     $pregs = array(
       ["/\[al_face\](.*?)\[\/al_face\]/is",
-    "<img style=\"opacity:1;width:".($width/15)."\" src='emoji.php?faceid=$1' />"],
+    "<img style=\"opacity:1;width:".($width/15)."px\" src='emoji.php?faceid=$1' />"],
     
       ['/\[al_image]([0-9]*?.jpg)\[\/al_image\]\[al_image\]([0-9]*?.jpg)\[\/al_image\]/is',
     "<div style='text-align: center'><img style=\"width:45%\" src=\"../upload/$1\" /><img style=\"width:45%\" src=\"../upload/$2\" /></div>"],
@@ -147,6 +147,8 @@
       //取消匿名投稿快捷方案
       if($signature != "匿名投稿"): 
         $signature .= "({$_GET['qquin']})";
+        $signature = preg_replace("/\[al_face\](.*?)\[\/al_face\]/is",
+    "<img style=\"opacity:1;width:".($width/25)."px\" src='emoji.php?faceid=$1' />", $signature);
         $qlogo = "<img style=\"width:10%; border-radius: 35%; vertical-align: middle; float:left;\" src=\"http://q2.qlogo.cn/headimg_dl?dst_uin={$_GET['qquin']}&spec=100\"></img>";
         echo $qlogo;
         endif;

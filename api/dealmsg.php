@@ -24,6 +24,10 @@ if($RawMsgArr['message_type'] == 'private') {
   elseif(strpos($msg,"署名")  !== false && mb_strpos($msg,"署名") == 2) :
     $msg_t = trim(mb_substr($msg,4));
     $signature = $msg_t ?? "_dynamic";
+    if(strpos($signature,'CQ:face')) :
+      preg_match('/id=(\d+)/',$signature,$faceid);
+      $signature = "[al_face]".$faceid[1]."[/al_face]";
+    endif;
     $stats = $deal -> sqlctrl("setsign",[$qquin,$signature]);
     $signature = $msg_t ?? "您的昵称({$qqname})";
     $rtx = ($stats == 1) ? "成功设置署名为{$signature}。" : "设置署名失败，请联系管理员！";
