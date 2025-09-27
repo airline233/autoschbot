@@ -9,5 +9,7 @@
     "database_path": "../databases",
     "absaddr": "http://172.16.0.1:15001",
 
-    "sync_groups": ["group3", "group4"]
+    "sync_groups": ["group3", "group4"],
+
+    "minlevel": 10
 }

@@ -12,6 +12,12 @@ $confs = json_decode(file_get_contents('config.json'),1);
 foreach ($confs as $n => $v) $GLOBALS[$n] = $v;
 $deal = new datactrl(); //初始化操作类
 
+$qqinfo = curl("{$GLOBALS['apiaddr']}/get_stranger_info?access_token={$GLOBALS['access_token']}","user_id=$qquin");
+$qqlevel = json_decode($qqinfo,1)['data']['qqLevel'];
+if(is_numeric($qqlevel) && $qqlevel < $GLOBALS['minlevel']) :
+  file_put_contents("../tmp/$qquin.ban.log",$qqinfo);
+  exit; //QQ等级限制
+endif;
 foreach ($deal -> sqlctrl('getblacklists') as $line) if(array_search($qquin,$line) ) exit;
 
 if(!file_exists("../tmp")) mkdir("../tmp");
