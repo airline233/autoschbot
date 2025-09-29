@@ -36,6 +36,9 @@ class datactrl {
       ** 传入数据：[rid,reason]
       */
         $rid = intval($datain[0]);
+        while(strlen($rid) < 4) $rid = '0' . $rid;
+        if(strlen($rid) == 4) $rid = date("Ym") . $rid;
+
         $reason = $datain[1];
         $stmt = $pdo->prepare("UPDATE $table SET `status`=7 WHERE `id`=?");
         $stmt->execute([$rid]);
@@ -52,6 +55,9 @@ class datactrl {
       ** 传入数据：[rid]
       */
         $rid = intval($datain[0]);
+        while(strlen($rid) < 4) $rid = '0' . $rid;
+        if(strlen($rid) == 4) $rid = date("Ym") . $rid;
+
         $stmt = $pdo->prepare("UPDATE $table SET `status`=0 WHERE `id`=?");
         $stmt->execute([$rid]);
         $stmt = $pdo->prepare("SELECT `qquin` FROM $table WHERE `id`=?");
@@ -98,8 +104,11 @@ class datactrl {
         return 1;
 
       case 'setcancelled': //撤稿（done）
+        $rid = intval($datain[0]);
+        while(strlen($rid) < 4) $rid = '0' . $rid;
+        if(strlen($rid) == 4) $rid = date("Ym") . $rid;
         $stmt = $pdo->prepare("UPDATE $table SET `status`=5 WHERE `id`=? AND `qquin`=? AND `status`=0");
-        $stmt->execute([round($datain[0]), intval($datain[1])]);
+        $stmt->execute([$rid, $datain[1]]);
         return ($stmt->rowCount() == 1) ? 1 : 0;
 
       case 'setsign':
@@ -154,7 +163,10 @@ class datactrl {
         return $_pdo -> exec("UPDATE `users` SET `banned` = {$datain[1]} WHERE `qquin` = {$datain[0]}");
         
       case 'query':
-        return $pdo -> query("SELECT `qquin` FROM `{$table}` WHERE `id` = {$datain}") ->fetchColumn();
+        $rid = $datain;
+        while(strlen($rid) < 4) $rid = '0' . $rid;
+        if(strlen($rid) == 4) $rid = date("Ym") . $rid;
+        return $pdo -> query("SELECT `qquin` FROM `{$table}` WHERE `id` = {$rid}") ->fetchColumn();
           
       default:
         return "undefined func";
@@ -178,6 +190,8 @@ class datactrl {
   function sendqzone($_rid = null, $time = null) { //发空间 目前是一条稿件对应一条说说，图片单独发出
     require_once('qzone.class.php');
     $instance = new qzone($GLOBALS['apiaddr'],$GLOBALS['access_token']);
+    while(is_numeric($_rid) && strlen($_rid) < 4) $_rid = '0' . $_rid;
+    if(strlen($_rid) == 4) $_rid = date("Ym") . $_rid;
     $origin = $this->sqlctrl('getunsentcontents', $_rid);
     $_ridtxt = ($_rid) ? "该稿件已发送或已拒稿" : "暂无待发送的稿件";
     foreach($origin as $v)  $this->sqlctrl('setsent', [$v['id'],'']); //预标记已发
@@ -229,6 +243,9 @@ class datactrl {
     $_rt = '';
     foreach($rids as $rid) {
       if(!is_numeric($rid)) return 'Invaild ID';
+      while(strlen($_rid) < 4) $_rid = '0' . $_rid;
+      if(strlen($_rid) == 4) $_rid = date("Ym") . $_rid;
+
       $origin = $this->sqlctrl('getunsentcontents', $rid)[0];
       $tid = $origin['tid'];
       if($origin['qquin'] != $qq && isset($qq)) return 0;
@@ -264,6 +281,9 @@ class datactrl {
       $values['bg'] = $_v[1];
     endif;
     $rid = $values['id'];
+    while(strlen($rid) < 4) $rid = '0' . $rid;
+    if(strlen($rid) == 4) $rid = date("Ym") . $rid;
+    
     $imgpath = "../tmp/{$rid}.jpg";
     @unlink($imgpath);
     $len = strlen(str_replace('al_p', '', $values['content']));

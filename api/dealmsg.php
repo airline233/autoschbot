@@ -48,7 +48,7 @@ if($RawMsgArr['message_type'] == 'private') {
   elseif(strpos($msg,"删稿") === 0):
     $msg_t = trim(mb_substr($msg,2));
     $rts = $deal -> delqzone($msg_t,$qquin);
-    $deal -> reply("private",$qquin,($rts == 1) ? "成功删除了ID为{$msg_t}的稿件（注意，同步在群内的无法撤回）" : "删稿失败，可能是输入了错误的稿件ID。");
+    $deal -> reply("private",$qquin,($rts['code'] == 1) ? "成功删除了ID为{$msg_t}的稿件（注意，同步在群内的无法撤回）" : "删稿失败，可能是输入了错误的稿件ID。");
     if($rts == 1) foreach($GLOBALS['supergroups'] as $gid) $deal -> reply("group",$gid,"稿件{$msg_t}已被发稿人主动删除。");
     exit;
   elseif(strpos($msg,"设置定时")===0): //设置定时 tid 时间格式(2025-07-05 23:00:00)
