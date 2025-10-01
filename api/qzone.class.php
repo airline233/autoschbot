@@ -55,6 +55,7 @@ class qzone {
                     e.g. 10000 或 10001|10002|...|10005
             返回：说说Tid，修改/删除/评论用；失败则返回原始array
         */
+        if(isset($setTime) && $setTime - time() < 600) $setTime = null;
         $data = array(
             'syn_tweet_verson' => 1,
             'paramstr' => 1,

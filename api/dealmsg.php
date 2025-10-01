@@ -94,9 +94,8 @@ if($RawMsgArr['message_type'] == 'private') {
         break;
         endif;
       $raw = array($qquin,$signature,urlencode($content));
-      $rid = $deal -> submit($raw,$_hide);
-      if($_hide) $deal -> sqlctrl("setcancelled",[$rid,$qquin]);
-      $content = "已收到您的投稿，您的稿件id为：{$rid}。\n⚠️发出后一般不支持撤稿\n❗请务必检查投稿预览，若稿件排版有问题请及时发送“撤稿 {$rid}”撤回稿件重新投稿；\n\n如需为您的稿件设置定时，请发送：“设置定时 {$rid} 2025-01-01 00:00:00”（日期和时间仅做示例 不要漏掉空格 最多可支持一小时后~七日内的定时设置）";
+      $rid = $deal -> submit($raw,[$qqlevel]);
+      $content = "已收到您的投稿，您的稿件id为：{$rid}。\n⚠️发出后一般不支持撤稿\n❗请务必检查投稿预览，若稿件排版有问题请及时发送“撤稿 {$rid}”撤回稿件重新投稿；\n\n如需为您的稿件设置定时，请发送：“设置定时 {$rid} 2025-01-01 00:00:00”（日期和时间仅做示例 不要漏掉空格 最多可支持一小时后~七日内的定时设置\n\n注意：如果你的设定的时间前没有被审核通过，不会被发出）";
       if(!is_numeric($rid)) $content = $rid;
       $deal -> reply("private",$qquin,$content,0);
       if(is_numeric($rid)) {
@@ -147,6 +146,7 @@ if($RawMsgArr['message_type'] == 'private') {
     case 'crtimg':
     case 'delqzone';
       $cmd[0] = str_replace("send","sendqzone",$cmd[0]);
+      if(!isset($cmd[1])) $cmd[1] = "";
       $content = eval('return $deal -> '."{$cmd[0]}('{$cmd[1]}');");
     break;
 
@@ -176,6 +176,23 @@ if($RawMsgArr['message_type'] == 'private') {
       if(!isset($cmd[1])) $cmd[1] = '';
       $content = json_encode($deal -> sqlctrl($cmd[0],$cmd[1]));
     break;
+
+    case 'AI_Review':
+      $review_result = $deal -> AI_Review($cmd[1]);
+      if($review_result['code'] != 200) $content = $review_result['msg'];
+      else {
+        $review_result_arr = json_decode($review_result['data'],1);
+        if(is_array($review_result_arr)) {
+          $content = "ID:{$cmd[1]},AI意见:";
+          $content .= $review_result_arr['is_compliant'] == 1 ? '通过' : '拒绝';
+          $content .= "\n理由：{$review_result_arr['reason']}";
+          $content .= $review_result_arr['violation_category'] ?? "\n违规分类：{$review_result_arr['violation_category']}";
+          $content .= "\n\n置信度：{$review_result_arr['confidence_score']}";
+        }else {
+          $content = json_encode($review_result);
+        }
+      }
+      break;
   }
   if($cmd[0] == "crtimg") $content = "[CQ:image,url={$GLOBALS['absaddr']}/tmp/{$content}]";
   if(isset($content)) :

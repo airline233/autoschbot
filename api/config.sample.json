@@ -2,14 +2,17 @@
 
     "apiaddr": "http://172.16.0.2:15000",
     "access_token": "your_token_here",
-
-    "superadmin": "your_qq_here",
-    "supergroups": ["group1","group2"],
-
     "database_path": "../databases",
     "absaddr": "http://172.16.0.1:15001",
 
+    "superadmin": "your_qq_here",
+    "supergroups": ["group1","group2"],
     "sync_groups": ["group3", "group4"],
+    "minlevel": 10,
 
-    "minlevel": 10
+    "ai_review": true,
+    "ai_review_promptfile": "ai_review_prompt.md",
+    "ai_review_endpoint_url": "https://api.siliconflow.cn/v1/chat/completions",
+    "ai_review_endpoint_ak": "sk-abcdefg1234567890",
+    "ai_review_model": "THUDM/GLM-4-32B-0414"
 }

@@ -36,10 +36,11 @@ class datactrl {
       ** 传入数据：[rid,reason]
       */
         $rid = intval($datain[0]);
+        $reason = $datain[1];
+        if(!$rid || !$reason) return "缺少ID/理由";
         while(strlen($rid) < 4) $rid = '0' . $rid;
         if(strlen($rid) == 4) $rid = date("Ym") . $rid;
 
-        $reason = $datain[1];
         $stmt = $pdo->prepare("UPDATE $table SET `status`=7 WHERE `id`=?");
         $stmt->execute([$rid]);
         $stmt = $pdo->prepare("SELECT `qquin` FROM $table WHERE `id`=?");
@@ -197,6 +198,7 @@ class datactrl {
     foreach($origin as $v)  $this->sqlctrl('setsent', [$v['id'],'']); //预标记已发
     if (!$origin[0]) return $_ridtxt;
     $imgs = "";
+    $sendrt = '';
     foreach ($origin as $v) {
         $rid = $v['id'];
         if (!$rid) continue;
@@ -221,7 +223,6 @@ class datactrl {
             endif;
         $this->reply("private", $v['qquin'], ($setTime) ? "您的稿件{$rid}已登记定时，将在".date("Y-m-d H:i:s",$setTime)."发出。\n注意：定时稿件不会在各年级群内同步" : "您的稿件{$rid}已被发出。",0);
         $sendrt .= $rid . " ";
-        $rids .= $rid.",";
         $sendrt .= "动态发布成功，tid为".$tid.',';
         if(isset($setTime)) continue;
         usleep(500000);
@@ -231,9 +232,8 @@ class datactrl {
             $sendcontent .= "[CQ:image,url={$GLOBALS['absaddr']}/upload/{$img}]";
         foreach($groups as $gid)
             $this->reply("group", $gid, $sendcontent,0);
+        //@unlink("../tmp/$rid.jpg");
     }
-    foreach (explode(" ", $content) as $path)
-      @unlink($path);
     return rtrim($sendrt,',');
   }
 
@@ -257,8 +257,9 @@ class datactrl {
     return trim($_rt,"\n");
   }
 
-  function submit($raw, $_hide = null) {
+  function submit($raw, $remarks = null) {
     $rid = $this->sqlctrl('insert', $raw);
+    $qqlevel = $remarks[0];
     $this->crtimg($rid);
     if(strstr(urldecode($raw[2]),'image')) :
       preg_match_all("/\[al_image\](.*?)\[\/al_image\]/s",urldecode($raw[2]),$addimgs);
@@ -268,9 +269,10 @@ class datactrl {
     foreach ($addimgs as $img)
       $imgs .= "[CQ:image,url={$GLOBALS['absaddr']}/upload/{$img}]";
     $msg = "收到投稿,ID:{$rid}：[CQ:image,url={$GLOBALS['absaddr']}/tmp/{$rid}.jpg]".$imgs;
-    if($_hide) exit;
     $this->reply('private', $raw[0], $msg, 0);
-    foreach ($GLOBALS['supergroups'] as $gid) $this->reply("group", $gid, $msg, 600); //延迟10min发出，给发稿人反悔的机会，防止审核过快
+    if($qqlevel <= 15) $msg .= "\n\n!低等级账号投稿，请审核员注意检查是否有灌水嫌疑";
+
+    foreach ($GLOBALS['supergroups'] as $gid) $this->reply("group", $gid, $msg, 600); //延迟10min发到审核群，给发稿人反悔的机会，防止审核过快
     return $rid;
   }
 
@@ -311,6 +313,43 @@ class datactrl {
       endif;
     if(!file_exists($imgpath)) return "error!!!";
     return "$rid.jpg";
+  }
+
+  function AI_Review(int $rid) {
+    /*
+      * AI智能预审
+      * 传入: rid
+      * 返回: ['code': 200|500,
+              'msg': 'success'|'error info',
+              'data': [(BOOLEAN)is_complaint,(string)reason,(float)confidence_score]
+              ]
+    */
+    require_once("curl.php");
+    while(strlen($rid) < 4) $rid = '0' . $rid;
+    if(strlen($rid) == 4) $rid = date("Ym") . $rid;
+    $rawcontent = urldecode($this->sqlctrl('getunsentcontents', $rid)[0]['content']);
+    $system_prompt = file_get_contents($GLOBALS['ai_review_promptfile']);
+    $data = array(
+      "model" => $GLOBALS['ai_review_model'],
+      "messages" => array(
+        array("role" => "system", "content" => $system_prompt),
+        array("role" => "user", "content" => $rawcontent)
+      ),
+      "temperature" => 0,
+      "thinking_budget" => 128,
+      "response_format" => [
+        "type" => "json_object"
+      ]
+    );
+    $headers = array(
+      "Content-Type: application/json",
+      "Authorization: Bearer {$GLOBALS['ai_review_endpoint_ak']}"
+    );
+    $response = curl($GLOBALS['ai_review_endpoint_url'], json_encode($data), null, 'both', $headers);
+    if($response[0] != 200) return ['code' => 500, 'msg' => 'Httpcode:' . $response[0] . " Msg: ".$response[1]];
+    $rt = json_decode($response[1], true);
+    $result = $rt['choices'][0]['message']['content'];
+    return ['code' => 200, 'msg' => 'success', 'data' => $result];
   }
 }
 ?>
