@@ -252,9 +252,11 @@ class datactrl {
       $instance = new qzone($GLOBALS['apiaddr'],$GLOBALS['access_token']);
       $rt = $instance -> delete($tid);
       if(!$qq && $rt['code'] == 1) $this -> reply('private',$origin['qquin'],"您的稿件{$_rid}已被管理员手动删除，有疑问请发送“反馈+内容”（用一条消息发出）");
+      // else if($rt['code'] != 1) $this -> reply('private',$GLOBALS['superadmin'],"稿件{$rid}删除失败，错误信息：{$rt['msg']}");
       $_rt .= $rt['code'].':'.$rt['msg'].':'.$tid."\n";
     }
-    return trim($_rt,"\n");
+    if(!isset($qq)) return trim($_rt,"\n");
+    else return($rt['code'] == 1) ? ['code' => 1] : ['code' => 0, 'msg' => $rt['msg']];
   }
 
   function submit($raw, $remarks = null) {
@@ -280,7 +282,7 @@ class datactrl {
     if (!is_array($values)): 
       $_v = explode(',',$values);
       $values = $this->sqlctrl('getunsentcontents', $_v[0])[0];
-      $values['bg'] = $_v[1];
+      $values['bg'] = $_v[1] ?? '';
     endif;
     $rid = $values['id'];
     while(strlen($rid) < 4) $rid = '0' . $rid;
