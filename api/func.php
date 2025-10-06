@@ -67,14 +67,19 @@ class datactrl {
         $this->reply('private', $qquin, "您的稿件{$rid}已被重新接收，请耐心等待发送。");
         return 1;
 
-      case 'getallids':
+      case 'get_ones_submits':
       /*
-      ** 获取单QQ某月所有投稿（咕）
+      ** 获取单QQ某月所有投稿
+      ** 传入 qquin
+      ** 返回：array(
+      ['id' => xxx,...],
+      ...    
+      )
       */
         $qquin = intval($datain);
-        $stmt = $pdo->prepare("SELECT id FROM $table WHERE qquin=?");
+        $stmt = $pdo->prepare("SELECT * FROM $table WHERE `qquin`=?");
         $stmt->execute([$qquin]);
-        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
 
       case 'getunsentcontents':
       /*
@@ -179,6 +184,10 @@ class datactrl {
     if($sleep === 1) $sleep = rand(5,15); 
     elseif(!$sleep) $sleep = 3;
     elseif($sleep === 0) $sleep = 1;
+    elseif($sleep == 'real0') {
+      $sleep = 0;
+      usleep(300000);
+    }
     $subtype = ($type == 'private') ? 'user' : 'group';
     $url = "{$GLOBALS['apiaddr']}/send_{$type}_msg?access_token={$GLOBALS['access_token']}";
     $data = "message=$msg&{$subtype}_id=$qquin";
@@ -206,7 +215,7 @@ class datactrl {
         $content = urldecode($v['content']);
         $setTime = $v['setTime'];
         $addimgs = [];
-        if(strstr($content,'image')) :
+        if(str_contains($content,'image')) :
             preg_match_all("/\[al_image\](.*?)\[\/al_image\]/s",$content,$addimgs);
             $addimgs = $addimgs[1];
             endif;
@@ -214,7 +223,8 @@ class datactrl {
             $this->crtimg($v);
         $imgs = $instance -> upload($imgpath,'file')."\t";
         foreach($addimgs as $img) $imgs .= $instance -> upload("../upload/".$img,'file')."\t";
-        $tid = $instance -> publish($rid,1,rtrim($imgs,"\t"),$setTime);
+        $ugcRight = ($GLOBALS['maintain'] == 0) ? (!str_contains($v['signature'],'匿名') ? 4 : 1) : 16; //维护状态发表仅自己与SuperAdmin可见；实名投稿仅好友可见；
+        $tid = $instance -> publish($rid,1,rtrim($imgs,"\t"),$setTime,$ugcRight,($ugcRight == 16) ? $GLOBALS['superadmin'] : null);
         $this->sqlctrl('setsent', [$v['id'],$tid]); //更新Tid
         if(is_array($tid)):
             $json = json_encode($tid);
@@ -226,7 +236,7 @@ class datactrl {
         $sendrt .= "动态发布成功，tid为".$tid.',';
         if(isset($setTime)) continue;
         usleep(500000);
-        $groups = $GLOBALS['sync_groups'];
+        $groups = ($GLOBALS['maintain'] == 0) ? $GLOBALS['sync_groups'] : [];
         $sendcontent = "[CQ:image,url={$GLOBALS['absaddr']}/tmp/{$rid}.jpg]";
         foreach ($addimgs as $img) 
             $sendcontent .= "[CQ:image,url={$GLOBALS['absaddr']}/upload/{$img}]";
@@ -243,8 +253,8 @@ class datactrl {
     $_rt = '';
     foreach($rids as $rid) {
       if(!is_numeric($rid)) return 'Invaild ID';
-      while(strlen($_rid) < 4) $_rid = '0' . $_rid;
-      if(strlen($_rid) == 4) $_rid = date("Ym") . $_rid;
+      while(strlen($rid) < 4) $rid = '0' . $rid;
+      if(strlen($rid) == 4) $rid = date("Ym") . $rid;
 
       $origin = $this->sqlctrl('getunsentcontents', $rid)[0];
       $tid = $origin['tid'];
@@ -255,7 +265,7 @@ class datactrl {
       // else if($rt['code'] != 1) $this -> reply('private',$GLOBALS['superadmin'],"稿件{$rid}删除失败，错误信息：{$rt['msg']}");
       $_rt .= $rt['code'].':'.$rt['msg'].':'.$tid."\n";
     }
-    if(!isset($qq)) return trim($_rt,"\n");
+    if($qq == null) return trim($_rt,"\n");
     else return($rt['code'] == 1) ? ['code' => 1] : ['code' => 0, 'msg' => $rt['msg']];
   }
 
@@ -263,7 +273,7 @@ class datactrl {
     $rid = $this->sqlctrl('insert', $raw);
     $qqlevel = $remarks[0];
     $this->crtimg($rid);
-    if(strstr(urldecode($raw[2]),'image')) :
+    if(str_contains(urldecode($raw[2]),'image')) :
       preg_match_all("/\[al_image\](.*?)\[\/al_image\]/s",urldecode($raw[2]),$addimgs);
       $addimgs = $addimgs[1];
       endif;
@@ -279,15 +289,14 @@ class datactrl {
   }
 
   function crtimg($values) {
-    if (!is_array($values)): 
-      $_v = explode(',',$values);
-      $values = $this->sqlctrl('getunsentcontents', $_v[0])[0];
-      $values['bg'] = $_v[1] ?? '';
+    if (!is_array($values)):
+      $rid = intval($values);
+      while(strlen($rid) < 4) $rid = '0' . $rid;
+      if(strlen($rid) == 4) $rid = date("Ym") . $rid;
+      $values = $this->sqlctrl('getunsentcontents', $rid)[0];
     endif;
-    $rid = $values['id'];
-    while(strlen($rid) < 4) $rid = '0' . $rid;
-    if(strlen($rid) == 4) $rid = date("Ym") . $rid;
     
+    $rid = $values['id'];
     $imgpath = "../tmp/{$rid}.jpg";
     @unlink($imgpath);
     $len = strlen(str_replace('al_p', '', $values['content']));
@@ -305,7 +314,7 @@ class datactrl {
     if ($width > 2160) $width = 2160;
     if ($width < 1080) $width = 1080;
     $values['content'] = base64_encode($values['content']);
-    $url = "{$GLOBALS['absaddr']}/api/crtimg.php?content={$values['content']}&date={$values['timestamp']}&signature={$values['signature']}&qquin={$values['qquin']}&rid=$rid&width=$width&bg={$values['bg']}";
+    $url = "{$GLOBALS['absaddr']}/api/crtimg.php?content={$values['content']}&date={$values['timestamp']}&signature={$values['signature']}&qquin={$values['qquin']}&rid=$rid&width=$width";
     $shell = "sudo playwright screenshot --viewport-size={$width},720 --wait-for-timeout=1000 \"{$url}\"  {$imgpath} --full-page 2>&1"; //改用playwright截图
     exec($shell, $rt, $return_var);
     if(!file_exists($imgpath)) :

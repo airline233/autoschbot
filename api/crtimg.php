@@ -21,12 +21,12 @@
             margin: 0;
             padding: 2% auto;
             <?php
-            if(!$_GET['bg']) echo "background-image: url('bingimg.php');";
-            if($_GET['bg']) echo "background:".$_GET['bg'].";";
+            if(!isset($_GET['bg'])) echo "background-image: url('bingimg.php');";
+            else echo "background:".$_GET['bg'].";";
             ?>
-                    width: 100%;
-        height: 100%;
-        backdrop-filter: blur(10px);
+            width: 100%;
+            height: 100%;
+            backdrop-filter: blur(10px);
         }
         
         .container {
@@ -38,7 +38,7 @@
             padding-bottom: 1%;
             padding-top: 3%;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            border-radius: 5%;
+            border-radius: <?php echo round($width/40); ?>px;
         }
         
         .author {  
@@ -62,7 +62,7 @@
             font-size: 90px;
             color: #030303;
             line-height: 1.3;
-            font-family: SiYuanRegular;
+            font-family: SiYuanRegular, NotoColorEmoji, sans-serif;
             opacity: 0.9;
         }
         
@@ -74,10 +74,10 @@
             margin-top: 0px;
             opacity: 0.9;
             font-weight: bold;
-            font-family: SiYuanRegular;
+            font-family: SiYuanRegular, NotoColorEmoji, sans-serif;
         }
       .outlined {
-           -webkit-text-stroke: <?php echo round($width/600); ?>px white;
+           -webkit-text-stroke: <?php echo round($width/800); ?>px white;
       }
     </style>
 </head>
@@ -101,9 +101,9 @@
     "<div style='text-align: center'><img style=\"width:45%\" src=\"../upload/$1\" /><img style=\"width:45%\" src=\"../upload/$2\" /></div>"],
     
       ["/\[al_image\]([0-9]*?.jpg)\[\/al_image\]/is",
-    "<img style=\"width: 95%; margin: auto;\" src='../upload/$1' />"],
+    "<img style=\"width: 95%; margin: auto;\" src='../upload/$1' />"]
     
-      ["/([\x{1F600}-\x{1F64F}\x{1F300}-\x{1F5FF}\x{1F680}-\x{1F6FF}\x{1F700}-\x{1F77F}\x{1F780}-\x{1F7FF}\x{1F800}-\x{1F8FF}\x{1F900}-\x{1F9FF}\x{1FA00}-\x{1FA6F}\x{1FA70}-\x{1FAFF}])/u","<span class='content' style='font-family:NotoColorEmoji'>$1</span>"]
+      //["/([\x{1F600}-\x{1F64F}\x{1F300}-\x{1F5FF}\x{1F680}-\x{1F6FF}\x{1F700}-\x{1F77F}\x{1F780}-\x{1F7FF}\x{1F800}-\x{1F8FF}\x{1F900}-\x{1F9FF}\x{1FA00}-\x{1FA6F}\x{1FA70}-\x{1FAFF}])/u","<span class='content' style='font-family:NotoColorEmoji'>$1</span>"]
     );
 
     // Markdown 转 HTML 的正则规则
@@ -143,9 +143,7 @@
       <div class="author">
     <?php
       $signature = $_GET['signature'];
-      //if($_GET['qquin'] == 3260161918) $signature = "2312吴明易"; 
-      //取消匿名投稿快捷方案
-      if($signature != "匿名投稿"): 
+      if(!str_contains($signature,"匿名")): 
         $signature .= "({$_GET['qquin']})";
         $signature = preg_replace("/\[al_face\](.*?)\[\/al_face\]/is",
     "<img style=\"opacity:1;width:".($width/25)."px\" src='emoji.php?faceid=$1' />", $signature);
@@ -162,7 +160,6 @@
         echo "<p style=\"font-size:".($width/32)."px; opacity:0.6; color:black; margin-top:0px; margin-right:0px; margin-bottom:0px;\">$signature $date</p>";
         echo "<p style='color:yellow;font-size:".($width/32)."px;margin-top: 0px; margin-bottom:0px;'>ID:{$_GET['rid']}</p>";
         echo "<center><p class='outlined' style=\"font-size:".($width/20)."px; opacity:0.88; color: #32A0A8; margin-top:0px; margin-bottom:0px;\">还！没！加！墙！墙！的！快！来！加！我！QQ2060574537</p></center>";
-        //<br />另：现招收内容审核员兼推广员5位，只需每日抽出5分钟查看群消息即可<span style='font-family:NotoColorEmoji'>🤓👆🏻</span>享受劲爆内容提前看特权噢<span style='font-family:NotoColorEmoji'>👀</span><br />仅需邀请10名好友添加墙墙就可以咯₍˄·͈༝·͈˄*₎◞ ̑̑具体可私聊墙墙发送“反馈+申请审核员”
         ?>
         </div>
       </div>

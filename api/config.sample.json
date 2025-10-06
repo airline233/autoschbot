@@ -14,5 +14,7 @@
     "ai_review_promptfile": "ai_review_prompt.md",
     "ai_review_endpoint_url": "https://api.siliconflow.cn/v1/chat/completions",
     "ai_review_endpoint_ak": "sk-abcdefg1234567890",
-    "ai_review_model": "THUDM/GLM-4-32B-0414"
+    "ai_review_model": "THUDM/GLM-4-32B-0414",
+
+    "maintain": 0
 }
